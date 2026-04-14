@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from 'next/link';
 
 export default function Dashboard() {
   return (
@@ -8,22 +8,30 @@ export default function Dashboard() {
         <div className="card">
           <h3 className="text-lg font-medium text-gray-700 mb-2">广告位数量</h3>
           <p className="text-3xl font-bold text-blue-600">0</p>
-          <Link href="/zones" className="text-sm text-blue-600 mt-2 inline-block">查看详情</Link>
+          <Link href="/zones" className="text-sm text-blue-600 mt-2 inline-block">
+            查看详情
+          </Link>
         </div>
         <div className="card">
           <h3 className="text-lg font-medium text-gray-700 mb-2">广告数量</h3>
           <p className="text-3xl font-bold text-green-600">0</p>
-          <Link href="/ads" className="text-sm text-blue-600 mt-2 inline-block">查看详情</Link>
+          <Link href="/ads" className="text-sm text-blue-600 mt-2 inline-block">
+            查看详情
+          </Link>
         </div>
         <div className="card">
           <h3 className="text-lg font-medium text-gray-700 mb-2">今日展示</h3>
           <p className="text-3xl font-bold text-purple-600">0</p>
-          <Link href="/stats" className="text-sm text-blue-600 mt-2 inline-block">查看详情</Link>
+          <Link href="/stats" className="text-sm text-blue-600 mt-2 inline-block">
+            查看详情
+          </Link>
         </div>
         <div className="card">
           <h3 className="text-lg font-medium text-gray-700 mb-2">今日点击</h3>
           <p className="text-3xl font-bold text-orange-600">0</p>
-          <Link href="/stats" className="text-sm text-blue-600 mt-2 inline-block">查看详情</Link>
+          <Link href="/stats" className="text-sm text-blue-600 mt-2 inline-block">
+            查看详情
+          </Link>
         </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -42,13 +50,22 @@ export default function Dashboard() {
         <div className="card">
           <h3 className="text-lg font-medium text-gray-700 mb-4">快速操作</h3>
           <div className="space-y-2">
-            <Link href="/zones/create" className="block p-3 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors">
+            <Link
+              href="/zones/create"
+              className="block p-3 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors"
+            >
               创建广告位
             </Link>
-            <Link href="/products/create" className="block p-3 bg-green-50 text-green-700 rounded-md hover:bg-green-100 transition-colors">
+            <Link
+              href="/products/create"
+              className="block p-3 bg-green-50 text-green-700 rounded-md hover:bg-green-100 transition-colors"
+            >
               注册产品
             </Link>
-            <Link href="/ads/create" className="block p-3 bg-purple-50 text-purple-700 rounded-md hover:bg-purple-100 transition-colors">
+            <Link
+              href="/ads/create"
+              className="block p-3 bg-purple-50 text-purple-700 rounded-md hover:bg-purple-100 transition-colors"
+            >
               创建广告
             </Link>
           </div>

@@ -1,6 +1,6 @@
-import { D1Database } from "cloudflare:workers";
-import { drizzle } from "drizzle-orm/d1";
-import * as schema from "./schema";
+import { D1Database } from 'cloudflare:workers';
+import { drizzle } from 'drizzle-orm/d1';
+import * as schema from './schema';
 
 class Repository {
   private db: ReturnType<typeof drizzle>;
@@ -62,7 +62,7 @@ class Repository {
       .from(schema.zoneAds)
       .innerJoin(schema.ads, schema.zoneAds.adId.eq(schema.ads.id))
       .where(schema.zoneAds.zoneId.eq(zoneId))
-      .where(schema.ads.status.eq("active"));
+      .where(schema.ads.status.eq('active'));
   }
 
   // Impressions

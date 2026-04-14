@@ -1,12 +1,8 @@
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 
-export const clicks = sqliteTable('clicks', {
+export const waitlist = sqliteTable('waitlist', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  zoneId: text('zone_id').notNull(),
-  adId: text('ad_id').notNull(),
-  ipHash: text('ip_hash').notNull(),
-  userAgent: text('user_agent'),
-  referer: text('referer'),
+  email: text('email').notNull().unique(),
   createdAt: text('created_at')
     .notNull()
     .$defaultFn(() => new Date().toISOString()),

@@ -1,10 +1,10 @@
-import { MCPTool } from "@modelcontextprotocol/sdk";
-import Repository from "@muiad/db/src/repository";
+import { MCPTool } from '@modelcontextprotocol/sdk';
+import Repository from '@muiad/db/src/repository';
 
 const listAdsTool: MCPTool = {
-  name: "muiad_list_ads",
-  description: "列出所有广告",
-  inputSchema: { type: "object", properties: {} },
+  name: 'muiad_list_ads',
+  description: '列出所有广告',
+  inputSchema: { type: 'object', properties: {} },
   execute: async (input, context) => {
     const env = context.env as any;
     const repository = new Repository(env.DB);
@@ -19,10 +19,10 @@ const listAdsTool: MCPTool = {
         link_url: ad.linkUrl,
         weight: ad.weight,
         status: ad.status,
-        created_at: ad.createdAt
-      }))
+        created_at: ad.createdAt,
+      })),
     };
-  }
+  },
 };
 
 export { listAdsTool as muiad_list_ads };

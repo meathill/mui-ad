@@ -1,7 +1,7 @@
-import { Inter } from "next/font/google";
-import "./globals.css";
+import { Inter } from 'next/font/google';
+import './globals.css';
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ['latin'] });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,17 +16,26 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <p className="ml-4 text-sm opacity-90">MCP-first、Self-hosted、AI 驱动的去中心化开发者推广网络</p>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <a href="#features" className="text-sm hover:underline">功能</a>
-                  <a href="#docs" className="text-sm hover:underline">文档</a>
-                  <a href="#deploy" className="text-sm hover:underline">部署</a>
-                  <a href="/admin" className="px-4 py-2 bg-white text-blue-600 rounded-md font-medium hover:bg-opacity-90 transition-colors">管理面板</a>
+                  <a href="#features" className="text-sm hover:underline">
+                    功能
+                  </a>
+                  <a href="#docs" className="text-sm hover:underline">
+                    文档
+                  </a>
+                  <a href="#deploy" className="text-sm hover:underline">
+                    部署
+                  </a>
+                  <a
+                    href="/admin"
+                    className="px-4 py-2 bg-white text-blue-600 rounded-md font-medium hover:bg-opacity-90 transition-colors"
+                  >
+                    管理面板
+                  </a>
                 </div>
               </div>
             </div>
           </header>
-          <main>
-            {children}
-          </main>
+          <main>{children}</main>
           <footer className="bg-gray-100 border-t border-gray-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -37,9 +46,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <div>
                   <h3 className="text-lg font-bold mb-4">链接</h3>
                   <ul className="space-y-2 text-sm">
-                    <li><a href="#" className="text-gray-600 hover:text-blue-600">GitHub</a></li>
-                    <li><a href="#" className="text-gray-600 hover:text-blue-600">文档</a></li>
-                    <li><a href="#" className="text-gray-600 hover:text-blue-600">社区</a></li>
+                    <li>
+                      <a href="#" className="text-gray-600 hover:text-blue-600">
+                        GitHub
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="text-gray-600 hover:text-blue-600">
+                        文档
+                      </a>
+                    </li>
+                    <li>
+                      <a href="#" className="text-gray-600 hover:text-blue-600">
+                        社区
+                      </a>
+                    </li>
                   </ul>
                 </div>
                 <div>

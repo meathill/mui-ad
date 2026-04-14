@@ -3,21 +3,64 @@
   "main": ".open-next/worker.js",
   "name": "muiad-web",
   "compatibility_date": "2026-04-14",
-  "compatibility_flags": [
-    "nodejs_compat",
-    "global_fetch_strictly_public"
-  ],
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "account_id": "fdc63eeea83ae8f5234357308b9a638b",
+  "keep_names": false,
   "assets": {
     "directory": ".open-next/assets",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "none"
   },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "NEXT_CACHE_DO_QUEUE",
+        "class_name": "DOQueueHandler"
+      }
+    ]
+  },
+  "images": {
+    "binding": "IMAGES"
+  },
+  "observability": {
+    "enabled": false
+  },
+  "placement": {
+    "mode": "smart"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "muiad",
+      "database_id": "ca42d694-ebdb-4c62-984a-affa9d6fd891"
+    },
+    {
+      "binding": "NEXT_TAG_CACHE_D1",
+      "database_name": "tag-cache",
+      "database_id": "5f26868d-5d24-4645-8954-a27168f6fcd6"
+    }
+  ],
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["DOQueueHandler"]
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "site-cache"
+    }
+  ],
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
       "service": "muiad-web"
     }
   ],
-  "images": {
-    "binding": "IMAGES"
+  "vars": {
+    "NEXT_PUBLIC_SITE_URL": "https://muiad.dev",
+    "NEXT_PUBLIC_ASSETS_URL": "https://muiad.dev"
   }
 }

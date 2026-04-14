@@ -3,10 +3,7 @@
   "main": ".open-next/worker.js",
   "name": "muiad-admin",
   "compatibility_date": "2026-04-14",
-  "compatibility_flags": [
-    "nodejs_compat",
-    "global_fetch_strictly_public"
-  ],
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"

@@ -12,17 +12,17 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
-    "next": "^16.2.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "@opennextjs/cloudflare": "latest",
+    "next": "^16.2.3",
     "phosphor-react": "^1.4.1",
-    "tailwindcss": "^4.0.0",
-    "@opennextjs/cloudflare": "latest"
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "tailwindcss": "^4.2.2"
   },
   "devDependencies": {
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "typescript": "^5.0.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3",
     "wrangler": "latest"
   }
 }

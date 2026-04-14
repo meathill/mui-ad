@@ -1,18 +1,46 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.0.0/schema.json",
-  "organizeImports": {
-    "enabled": true
-  },
-  "linter": {
+  "$schema": "https://biomejs.dev/schemas/2.4.9/schema.json",
+  "vcs": {
     "enabled": true,
-    "rules": {
-      "recommended": true
-    }
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": false,
+    "includes": ["**", "!packages/web/next-env.d.ts"]
   },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
-    "indentWidth": 2,
     "lineWidth": 120
+  },
+  "linter": {
+    "enabled": false,
+    "rules": {
+      "recommended": true
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single"
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "json": {
+    "formatter": {
+      "trailingCommas": "none"
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
   }
 }
