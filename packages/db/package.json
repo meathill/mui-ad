@@ -1,0 +1,18 @@
+{
+  "name": "@muiad/db",
+  "version": "1.0.0",
+  "description": "MuiAD database layer",
+  "main": "src/index.ts",
+  "scripts": {
+    "generate": "drizzle-kit generate",
+    "migrate:local": "wrangler d1 migrations apply muiad-db --local",
+    "migrate:remote": "wrangler d1 migrations apply muiad-db --remote"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.30.0"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.20.0",
+    "wrangler": "^3.0.0"
+  }
+}

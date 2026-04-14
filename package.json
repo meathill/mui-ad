@@ -1,0 +1,16 @@
+{
+  "name": "mui-ad",
+  "version": "1.0.0",
+  "description": "MCP-first、Self-hosted、AI 驱动的去中心化开发者推广网络",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "update": "pnpm -r update"
+  },
+  "keywords": ["MCP", "Cloudflare Workers", "AI", "advertising"],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=24"
+  }
+}
