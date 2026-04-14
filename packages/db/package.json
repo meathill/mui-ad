@@ -9,10 +9,10 @@
     "migrate:remote": "wrangler d1 migrations apply muiad-db --remote"
   },
   "dependencies": {
-    "drizzle-orm": "^0.30.0"
+    "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.20.0",
-    "wrangler": "^3.0.0"
+    "drizzle-kit": "^0.31.10",
+    "wrangler": "^4.82.2"
   }
 }

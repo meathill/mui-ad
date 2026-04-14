@@ -10,12 +10,12 @@
     "typegen": "wrangler types"
   },
   "dependencies": {
-    "hono": "^4.0.0",
-    "@modelcontextprotocol/sdk": "^1.0.0",
-    "@muiad/db": "workspace:*"
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@muiad/db": "workspace:*",
+    "hono": "^4.12.12"
   },
   "devDependencies": {
-    "wrangler": "^3.0.0",
-    "vite": "^5.0.0"
+    "vite": "^8.0.8",
+    "wrangler": "^4.82.2"
   }
 }

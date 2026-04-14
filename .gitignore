@@ -39,3 +39,4 @@ wrangler.*.toml
 
 # Vitest
 coverage/
+.wrangler
