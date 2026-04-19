@@ -31,6 +31,12 @@ pnpm --filter @muiad/web build  # next build 过类型检查
 - 否则 R2 cache populator 会弹交互式账号选择阻塞
 - 我们的账号：`fdc63eeea83ae8f5234357308b9a638b`
 
+### `opennextjs-cloudflare deploy` 的 populate-cache 步骤偶发认证失败
+- **现象**：抛 `You must be logged in to use wrangler dev in remote mode` 或 `logged in with an API Token. Unset the CLOUDFLARE_API_TOKEN`，CI 里稳定复现，本地偶发
+- **根因**：populate-cache 内部调 `wrangler dev --remote` 做 R2 provisioning，这条路径对 API token 不认，只走 OAuth
+- **兜底**：直接用 `opennextjs-cloudflare build && wrangler deploy` 绕开 populate。落地页无 ISR 内容，跳过 populate 无副作用
+- **未解**：CI（Cloudflare Workers Builds）自动部署目前跑不通，先手动部署，等 OpenNext 修掉这个行为再回来接
+
 ### Wrangler 的 D1 migration 目录默认 `./migrations`
 - `apps/web/migrations/NNNN_*.sql` 是权威来源；命令 `pnpm run db:migrate:remote`
 - 如果 "No migrations to apply" 说明已经 apply 过，直接继续
@@ -38,5 +44,5 @@ pnpm --filter @muiad/web build  # next build 过类型检查
 ## 待长期关注
 
 - **waitlist 速率限制**：线上目前裸奔，上量后会被扫。要加 IP / 时间窗 middleware，或走 Turnstile
-- **`NEXT_PUBLIC_SITE_URL` 漂移**：绑 `muiad.dev` 自定义域名后，wrangler.jsonc 里 `vars` 要同步更新
+- **`NEXT_PUBLIC_SITE_URL` 漂移**：换正式域名时 wrangler.jsonc 里 `vars` 要同步更新
 - **OpenNext DO 警告**：部署日志里 workerd 会打 `DOQueueHandler` 未导出的 warning——这是 OpenNext 内部约定，未来版本可能变成 startup error，升级时留意

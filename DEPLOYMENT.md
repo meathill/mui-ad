@@ -4,8 +4,8 @@
 
 ## 线上地址
 
-- Landing / Waitlist：https://muiad-web.meathill.workers.dev
-- 自定义域名 `muiad.dev`：未接入（DNS/绑域名后续处理）
+- Landing / Waitlist：https://muiad.meathill.com（主域名）
+- Workers 默认域：https://muiad-web.meathill.workers.dev（兜底）
 
 ## Cloudflare 资源
 
@@ -36,9 +36,17 @@ pnpm --filter @muiad/web run db:migrate:remote
 # 4. 部署到 Cloudflare Workers
 CLOUDFLARE_ACCOUNT_ID=fdc63eeea83ae8f5234357308b9a638b \
   pnpm --filter @muiad/web run deploy
+
+# 4-备. 遇到 populate-cache OAuth 报错时的兜底：绕开 populate，直接 wrangler deploy
+cd apps/web && pnpm exec opennextjs-cloudflare build && \
+  CLOUDFLARE_ACCOUNT_ID=fdc63eeea83ae8f5234357308b9a638b pnpm exec wrangler deploy
 ```
 
-> 必须带 `CLOUDFLARE_ACCOUNT_ID`，否则 OpenNext 的 R2 cache populator 会弹交互式账号选择卡住。
+> `deploy` 必须带 `CLOUDFLARE_ACCOUNT_ID`，否则 OpenNext 的 R2 cache populator 会弹交互式账号选择卡住。
+>
+> 若 `populate-cache` 抛 "You must be logged in to use wrangler dev in remote mode" / "logged in with an API Token"，用上面的兜底命令——`opennextjs-cloudflare build` 产出 `.open-next/worker.js` 后直接 `wrangler deploy`，跳过 populate。我们的落地页没有 ISR/SSG 缓存内容，跳过无副作用。
+>
+> CI（Cloudflare Workers Builds）的自动部署目前也会撞上同一个坑，暂未修——见 [DEV_NOTE.md](./DEV_NOTE.md)。
 
 ## 端到端验证（部署后）
 
@@ -60,6 +68,5 @@ pnpm --filter @muiad/web exec wrangler d1 execute muiad --remote \
 
 ## 已知事项
 
-- `NEXT_PUBLIC_SITE_URL` / `NEXT_PUBLIC_ASSETS_URL` 仍为 `https://muiad.dev`，在 workers.dev 阶段 sitemap/OG 会指到一个未生效的域名——绑域名之前影响仅限 SEO / 社交分享预览
-- `wrangler.jsonc` 没有显式写 `workers_dev: true`，首次部署默认开启 workers.dev 路由；绑正式域名后可改为 `false`
 - Waitlist 接口目前没有速率限制，如遭遇滥用需要补 middleware
+- Cloudflare Workers Builds 的 CI 自动部署暂时跑不通（`populate-cache` 认证问题），手动部署可用
