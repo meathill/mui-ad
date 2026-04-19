@@ -75,10 +75,11 @@
 - [ ] 数据统计页面
 
 ### P0-7: 部署与验证
-- [ ] 部署 Worker 到 CF Workers
-- [ ] 部署 Admin 到 CF Workers（OpenNext）
-- [ ] 端到端测试：MCP 创建 → 页面渲染 → 计数
-- [ ] 更新 README 部署说明
+- [x] 部署 Worker 到 CF Workers（`muiad-api` → `api.muiad.meathill.com`）
+- [ ] 部署 Admin 到 CF Workers（OpenNext）——P0-6 做完再上
+- [x] 端到端测试：MCP register/create_zone/create_ad → /serve → /track/click → stats
+      线上全通（1 impression / 1 click / 100% CTR）
+- [x] 更新 DEPLOYMENT.md（worker 部署命令 + 资源表 + API URL）
 
 ## 待定事项
 

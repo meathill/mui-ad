@@ -6,13 +6,18 @@
 
 - Landing / Waitlist：https://muiad.meathill.com（主域名）
 - Workers 默认域：https://muiad-web.meathill.workers.dev（兜底）
+- API / MCP Server：https://api.muiad.meathill.com
+  - REST：`/api/products|zones|ads|stats`（`Authorization: Bearer <MUIAD_API_KEY>`）
+  - MCP：`POST /mcp`（JSON-RPC 2.0，同样走 Bearer）
+  - 公开：`/serve?zone=<id>`、`/track/click`、`/widget.js`
 
 ## Cloudflare 资源
 
 | 资源 | 用途 | 标识 |
 | --- | --- | --- |
 | Worker | `apps/web` OpenNext 产物 | `muiad-web` |
-| D1 | 业务库（含 `waitlist` 表） | `muiad` / `ca42d694-ebdb-4c62-984a-affa9d6fd891` |
+| Worker | `apps/worker` Hono REST + MCP | `muiad-api` |
+| D1 | 业务库（waitlist + products/zones/ads/zone_ads/impressions/clicks） | `muiad` / `ca42d694-ebdb-4c62-984a-affa9d6fd891` |
 | D1 | OpenNext tag cache | `tag-cache` / `5f26868d-5d24-4645-8954-a27168f6fcd6` |
 | R2 | OpenNext 增量缓存 | `site-cache` |
 | DO | OpenNext cache queue | `DOQueueHandler`（v1 migration） |
@@ -47,6 +52,18 @@ cd apps/web && pnpm exec opennextjs-cloudflare build && \
 > 若 `populate-cache` 抛 "You must be logged in to use wrangler dev in remote mode" / "logged in with an API Token"，用上面的兜底命令——`opennextjs-cloudflare build` 产出 `.open-next/worker.js` 后直接 `wrangler deploy`，跳过 populate。我们的落地页没有 ISR/SSG 缓存内容，跳过无副作用。
 >
 > CI（Cloudflare Workers Builds）的自动部署目前也会撞上同一个坑，暂未修——见 [DEV_NOTE.md](./DEV_NOTE.md)。
+
+## Worker 部署（apps/worker）
+
+```bash
+cd apps/worker
+# 首次 / 换 key 时
+echo "<your-key>" | pnpm wrangler secret put MUIAD_API_KEY
+# 部署（不走 OpenNext，不需要 populate-cache 绕行）
+CLOUDFLARE_ACCOUNT_ID=fdc63eeea83ae8f5234357308b9a638b pnpm run deploy
+```
+
+当前生产密钥：`muimui`（临时，压测完要换成强密钥）。
 
 ## 端到端验证（部署后）
 
