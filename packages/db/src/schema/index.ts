@@ -1,3 +1,4 @@
+export * from './waitlist';
 export * from './products';
 export * from './zones';
 export * from './ads';

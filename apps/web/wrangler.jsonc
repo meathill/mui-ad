@@ -33,7 +33,8 @@
     {
       "binding": "DB",
       "database_name": "muiad",
-      "database_id": "ca42d694-ebdb-4c62-984a-affa9d6fd891"
+      "database_id": "ca42d694-ebdb-4c62-984a-affa9d6fd891",
+      "migrations_dir": "../../packages/db/src/migrations"
     },
     {
       "binding": "NEXT_TAG_CACHE_D1",

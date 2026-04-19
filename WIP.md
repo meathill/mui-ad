@@ -30,11 +30,13 @@
 - [ ] 配置 vitest
 - [ ] 配置 tsconfig（strict mode，workspace 引用）
 
-### P0-2: 数据库层（packages/db）
-- [ ] 定义 Drizzle schema（products、zones、ads、zone_ads、impressions、clicks）
-- [ ] 生成 D1 迁移文件
-- [ ] 编写 repository.ts（基础 CRUD）
-- [ ] 编写 repository 单元测试
+### P0-2: 数据库层（packages/db）✅
+- [x] 定义 Drizzle schema（products、zones、ads、zone_ads、impressions、clicks + waitlist）
+- [x] 编写 D1 迁移文件（手写 `0002_business_tables.sql`，含索引；waitlist 的 `0001_init.sql` 从 apps/web 搬过来）
+- [x] 按领域拆 repository：`src/repository/{products,zones,ads,stats}.ts`，纯函数 + Drizzle
+- [x] 本地 libsql in-memory 起 vitest，13 个测试全过
+- [x] 本地 + 远程 `muiad` D1 都 apply 完 0002
+- 已知：apps/web 的 `wrangler.jsonc` 把 `migrations_dir` 指到 `packages/db/src/migrations` 统一管理
 
 ### P0-3: Worker 核心（apps/worker）
 - [ ] Hono app 初始化 + 路由骨架

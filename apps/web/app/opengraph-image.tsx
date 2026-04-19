@@ -8,8 +8,7 @@ const SERIF_URL =
   'https://raw.githubusercontent.com/Instrument/instrument-serif/main/fonts/ttf/InstrumentSerif-Regular.ttf';
 const SERIF_ITALIC_URL =
   'https://raw.githubusercontent.com/Instrument/instrument-serif/main/fonts/ttf/InstrumentSerif-Italic.ttf';
-const MONO_URL =
-  'https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@master/fonts/ttf/JetBrainsMono-Regular.ttf';
+const MONO_URL = 'https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono@master/fonts/ttf/JetBrainsMono-Regular.ttf';
 
 export default async function OpengraphImage() {
   const [serif, serifItalic, mono] = await Promise.all([
