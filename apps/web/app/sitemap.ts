@@ -1,26 +1,13 @@
 import type { MetadataRoute } from 'next';
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://muiad.dev';
+
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
-      url: 'https://muiad.dev',
+      url: SITE_URL,
       lastModified: new Date(),
       priority: 1,
-    },
-    {
-      url: 'https://muiad.dev/features',
-      lastModified: new Date(),
-      priority: 0.8,
-    },
-    {
-      url: 'https://muiad.dev/docs',
-      lastModified: new Date(),
-      priority: 0.8,
-    },
-    {
-      url: 'https://muiad.dev/deploy',
-      lastModified: new Date(),
-      priority: 0.8,
     },
   ];
 }

@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: oklch(0.18 0.01 80);
+  --color-ink-soft: oklch(0.42 0.012 80);
+  --color-paper: oklch(0.985 0.008 85);
+  --color-paper-deep: oklch(0.955 0.015 80);
+  --color-rule: oklch(0.86 0.015 80);
+  --color-ember: oklch(0.68 0.19 45);
+  --color-ember-deep: oklch(0.54 0.2 40);
+
+  --font-serif: var(--font-display), "Iowan Old Style", "Palatino", serif;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-code), ui-monospace, "JetBrains Mono", monospace;
+}
+
+html,
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+}
+
+::selection {
+  background: var(--color-ember);
+  color: var(--color-paper);
+}

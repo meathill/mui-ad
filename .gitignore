@@ -40,3 +40,5 @@ wrangler.*.toml
 # Vitest
 coverage/
 .wrangler
+.next
+.open-next
