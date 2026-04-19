@@ -1,18 +1,29 @@
 {
   "name": "@muiad/db",
   "version": "1.0.0",
-  "description": "MuiAD database layer",
+  "description": "MuiAD shared database layer",
+  "type": "module",
   "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts"
+  },
   "scripts": {
     "generate": "drizzle-kit generate",
-    "migrate:local": "wrangler d1 migrations apply muiad-db --local",
-    "migrate:remote": "wrangler d1 migrations apply muiad-db --remote"
+    "migrate:local": "wrangler d1 migrations apply muiad --local",
+    "migrate:remote": "wrangler d1 migrations apply muiad --remote",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260410.0",
+    "@libsql/client": "^0.17.2",
     "drizzle-kit": "^0.31.10",
+    "vitest": "^3.2.4",
     "wrangler": "^4.82.2"
   }
 }

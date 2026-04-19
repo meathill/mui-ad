@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "muiad-db-migrations",
+  "account_id": "fdc63eeea83ae8f5234357308b9a638b",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "muiad",
+      "database_id": "ca42d694-ebdb-4c62-984a-affa9d6fd891",
+      "migrations_dir": "src/migrations"
+    }
+  ]
+}
