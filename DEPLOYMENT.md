@@ -107,6 +107,29 @@ curl -sX POST "$URL/mcp" -H "$AUTH" -H 'Content-Type: application/json' \
 
 ## MCP client 接入
 
+### Claude Code
+
+```bash
+claude mcp add --transport http muiad https://api.muiad.meathill.com/mcp \
+  --header "Authorization: Bearer <MUIAD_API_KEY>"
+```
+
+等价的 `~/.claude.json` / `.mcp.json` 写法：
+
+```json
+{
+  "mcpServers": {
+    "muiad": {
+      "type": "http",
+      "url": "https://api.muiad.meathill.com/mcp",
+      "headers": { "Authorization": "Bearer <MUIAD_API_KEY>" }
+    }
+  }
+}
+```
+
+GUI 的 "Connectors" 面板只能走 OAuth 流，我们的 MCP Server 用静态 Bearer，所以不要在那里加——走 CLI 或直接改配置。
+
 ### Claude Desktop
 
 `~/Library/Application Support/Claude/claude_desktop_config.json`：

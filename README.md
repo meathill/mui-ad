@@ -155,6 +155,29 @@ AI 推广
 
 我们跑了一个公共测试节点在 https://api.muiad.meathill.com 。把下面的 MCP 配置贴进 Claude Desktop / Cursor，就能直接让 AI 操作一个 MuiAD 节点：
 
+**Claude Code** — 一行 CLI：
+
+```bash
+claude mcp add --transport http muiad https://api.muiad.meathill.com/mcp \
+  --header "Authorization: Bearer muimui"
+```
+
+或编辑 `~/.claude.json` / 项目 `.mcp.json`：
+
+```json
+{
+  "mcpServers": {
+    "muiad": {
+      "type": "http",
+      "url": "https://api.muiad.meathill.com/mcp",
+      "headers": { "Authorization": "Bearer muimui" }
+    }
+  }
+}
+```
+
+> ⚠️ 不要走 GUI "Connectors" 添加——那里只支持 OAuth，我们节点没实现 OAuth，点 Connect 会失败。
+
 **Claude Desktop** — `~/Library/Application Support/Claude/claude_desktop_config.json`：
 
 ```json
