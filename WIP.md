@@ -48,15 +48,16 @@
 - [x] vitest 集成测试：17 个用例全绿（auth / 三类 CRUD / serve / track / widget / pick）
 - 未部署：等 P0-4 MCP 做完一起上，需要 `wrangler secret put MUIAD_API_KEY`
 
-### P0-4: MCP Server（apps/worker）
-- [ ] MCP Server 初始化（SSE transport）
-- [ ] 实现 `muiad_create_zone` tool
-- [ ] 实现 `muiad_list_zones` tool
-- [ ] 实现 `muiad_register_product` tool
-- [ ] 实现 `muiad_create_ad` tool
-- [ ] 实现 `muiad_list_ads` tool
-- [ ] 实现 `muiad_get_zone_stats` tool
-- [ ] 编写 MCP tool 单元测试
+### P0-4: MCP Server（apps/worker）✅
+- [x] MCP Server 走 JSON-RPC 2.0 over HTTP（放弃 SDK 自带的 Node 形状 transport，
+  Workers 的 Fetch API 直接承载）
+- [x] 6 个 `muiad_*` tool 各自单文件：create_zone / list_zones / register_product
+  / create_ad / list_ads / get_zone_stats
+- [x] `src/mcp/server.ts` dispatcher 处理 initialize / ping / notifications /
+  tools/list / tools/call
+- [x] `/mcp` 挂在 bearer 之后
+- [x] 8 个 MCP 测试（transport + tools/list + 端到端 tool chain），加上原有 17
+  个，worker 25 测试全绿
 
 ### P0-5: 前端 Widget（apps/worker）
 - [ ] 广告渲染脚本 widget.js

@@ -2,43 +2,37 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { app, authed, makeEnv, type TestEnv } from './helpers';
 
 async function seedAdInZone(env: TestEnv): Promise<{ adId: string; zoneId: string }> {
-  const product = await app
-    .request(
-      '/api/products',
-      authed({
-        method: 'POST',
-        body: JSON.stringify({ name: 'p', url: 'https://p.dev' }),
-      }),
-      env,
-    )
-    .then((r) => r.json() as Promise<{ product: { id: string } }>);
+  const pRes = await app.request(
+    '/api/products',
+    authed({ method: 'POST', body: JSON.stringify({ name: 'p', url: 'https://p.dev' }) }),
+    env,
+  );
+  const product = (await pRes.json()) as { product: { id: string } };
 
-  const zone = await app
-    .request(
-      '/api/zones',
-      authed({
-        method: 'POST',
-        body: JSON.stringify({ name: 'z', siteUrl: 'https://s.dev', width: 300, height: 250 }),
-      }),
-      env,
-    )
-    .then((r) => r.json() as Promise<{ zone: { id: string } }>);
+  const zRes = await app.request(
+    '/api/zones',
+    authed({
+      method: 'POST',
+      body: JSON.stringify({ name: 'z', siteUrl: 'https://s.dev', width: 300, height: 250 }),
+    }),
+    env,
+  );
+  const zone = (await zRes.json()) as { zone: { id: string } };
 
-  const ad = await app
-    .request(
-      '/api/ads',
-      authed({
-        method: 'POST',
-        body: JSON.stringify({
-          productId: product.product.id,
-          title: 'Try p',
-          linkUrl: 'https://p.dev/landing',
-          zoneIds: [zone.zone.id],
-        }),
+  const aRes = await app.request(
+    '/api/ads',
+    authed({
+      method: 'POST',
+      body: JSON.stringify({
+        productId: product.product.id,
+        title: 'Try p',
+        linkUrl: 'https://p.dev/landing',
+        zoneIds: [zone.zone.id],
       }),
-      env,
-    )
-    .then((r) => r.json() as Promise<{ ad: { id: string } }>);
+    }),
+    env,
+  );
+  const ad = (await aRes.json()) as { ad: { id: string } };
 
   return { adId: ad.ad.id, zoneId: zone.zone.id };
 }
