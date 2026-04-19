@@ -71,30 +71,35 @@ AI Agent 会自动完成以下全部流程：
 
 你不需要做任何手动操作。你甚至不需要打开 MuiAD 的 Dashboard。
 
-### MCP 暴露的能力
+### 当前已实现的 MCP 能力（MVP-0）
 
 ```
 广告位管理
-  muiad_create_zone          创建广告位，返回嵌入代码
+  muiad_create_zone          创建广告位，返回 zone_id + 嵌入代码
   muiad_list_zones           列出所有广告位
-  muiad_get_zone_stats       查看广告位效果数据
 
 产品与广告
-  muiad_register_product     注册产品（给个 URL，AI 自动分析）
-  muiad_create_ad            创建广告（AI 自动生成物料）
+  muiad_register_product     登记要推广的产品
+  muiad_create_ad            创建广告并一次性投放到多个广告位
   muiad_list_ads             列出所有广告
 
-网络操作
+数据
+  muiad_get_zone_stats       单个广告位的展示量 / 点击量 / CTR
+```
+
+### 规划中（MVP-2 以后）
+
+```
+AI 推广
+  muiad_auto_promote         一键推广：AI 完成扫描 + 生成物料 + 投放 + 优化
+  muiad_optimize_campaign    AI 优化现有投放
+
+网络
   muiad_connect_network      连接到一个网络节点
   muiad_scan_available_zones 扫描网络中可用广告位
   muiad_submit_ad_to_zone    向某个广告位提交广告
 
-AI 推广
-  muiad_auto_promote         一键推广：AI 完成全部流程
-  muiad_optimize_campaign    AI 优化现有投放
-
-数据与结算
-  muiad_get_stats            查看推广效果
+积分与转化
   muiad_get_credits          查看积分余额
   muiad_list_conversions     查看转化明细
 ```
@@ -146,7 +151,50 @@ AI 推广
 
 ---
 
-## 快速开始
+## 立即试用（无需部署）
+
+我们跑了一个公共测试节点在 https://api.muiad.meathill.com 。把下面的 MCP 配置贴进 Claude Desktop / Cursor，就能直接让 AI 操作一个 MuiAD 节点：
+
+**Claude Desktop** — `~/Library/Application Support/Claude/claude_desktop_config.json`：
+
+```json
+{
+  "mcpServers": {
+    "muiad": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote",
+        "https://api.muiad.meathill.com/mcp",
+        "--header", "Authorization:Bearer muimui",
+        "--transport", "http-only"
+      ]
+    }
+  }
+}
+```
+
+**Cursor** — settings → MCP：
+
+```json
+{
+  "mcpServers": {
+    "muiad": {
+      "url": "https://api.muiad.meathill.com/mcp",
+      "headers": { "Authorization": "Bearer muimui" }
+    }
+  }
+}
+```
+
+然后对 AI 说：
+
+> 帮我用 MuiAD 登记一个产品叫 foo-cli，URL 是 https://foo.dev，然后创建一个 300×250 的广告位，生成一条广告投到那个位置上。
+
+> ⚠️ 目前的公共节点 + 临时 key (`muimui`) 是给快速体验用的，共享、可能随时被清库或换密钥。自己要认真用就自己部署一个。
+
+---
+
+## 自部署
 
 ### 前置条件
 
@@ -156,41 +204,33 @@ AI 推广
 
 ### 部署
 
+完整步骤见 [DEPLOYMENT.md](./DEPLOYMENT.md)。简化版：
+
 ```bash
-# 创建项目
-npm create muiad@latest my-mui-ad
-cd my-mui-ad
+# 克隆 + 装依赖
+git clone https://github.com/meathill/mui-ad.git && cd mui-ad && pnpm install
 
 # 登录 Cloudflare
-npx wrangler login
+cd apps/worker && pnpm wrangler login
 
-# 初始化数据库
-npx wrangler d1 create muiad-db
-npx wrangler kv:namespace create MUIAD_CACHE
-npx wrangler r2 bucket create muiad-assets
+# 创建 D1 + 应用迁移
+pnpm wrangler d1 create muiad
+# 把返回的 database_id 填进 apps/worker/wrangler.jsonc 和 apps/web/wrangler.jsonc
+cd ../../packages/db && pnpm run migrate:remote
+
+# 设 API key
+cd ../../apps/worker
+echo "your-strong-secret" | pnpm wrangler secret put MUIAD_API_KEY
 
 # 部署
-npm run deploy
+pnpm wrangler deploy
 ```
 
-部署完成后，你会得到一个 Worker URL，比如 `https://my-mui-ad.your-name.workers.dev`。
+部署完成后，你会得到一个 Worker URL，比如 `https://muiad-api.your-name.workers.dev`。
 
 ### 在 AI Agent 中配置 MCP
 
-在你的 MCP 配置文件中添加：
-
-```json
-{
-  "mcpServers": {
-    "muiad": {
-      "url": "https://my-mui-ad.your-name.workers.dev/mcp",
-      "headers": {
-        "Authorization": "Bearer your-api-key"
-      }
-    }
-  }
-}
-```
+参考上面「立即试用」一节的配置样例，把 URL 换成你自己节点的域名、key 换成你设的 `MUIAD_API_KEY` 即可。
 
 ### 开始使用
 
@@ -232,27 +272,35 @@ Cloudflare Workers
 
 ---
 
-## 项目结构
+## 项目结构（monorepo）
 
 ```
-muiad/
-├── src/
-│   ├── worker/              # Cloudflare Worker 入口
-│   │   ├── index.ts         # 主路由
-│   │   ├── mcp.ts           # MCP Server 实现
-│   │   └── middleware.ts    # 认证与限流
-│   ├── modules/
-│   │   ├── ad-server/       # 广告投放引擎
-│   │   ├── attribution/     # 归因追踪
-│   │   ├── ai-agent/        # AI 推广代理
-│   │   ├── network/         # 去中心化网络
-│   │   └── credits/         # 积分系统
-│   ├── db/
-│   │   ├── schema.sql       # D1 表结构
-│   │   └── migrations/      # 数据库迁移
-│   └── shared/              # 共享类型与工具
-├── wrangler.toml
-├── package.json
+mui-ad/
+├── apps/
+│   ├── web/                 # 营销站 landing + waitlist（Next.js 16 + OpenNext）
+│   └── worker/              # API + MCP + /serve + /track（Hono on Workers）
+│       └── src/
+│           ├── index.ts
+│           ├── middleware/auth.ts
+│           ├── modules/ad-server/  # 加权随机投放
+│           ├── mcp/
+│           │   ├── server.ts       # JSON-RPC dispatcher
+│           │   └── tools/          # 每个 muiad_* 一个文件
+│           └── routes/
+│               ├── api/            # zones/products/ads/stats CRUD
+│               ├── serve.ts
+│               ├── track.ts
+│               └── widget.ts
+├── packages/
+│   └── db/                  # 共享 schema + repository + 迁移
+│       ├── src/
+│       │   ├── schema/      # drizzle table 定义
+│       │   ├── repository/  # 按领域拆的纯函数 CRUD
+│       │   └── migrations/  # wrangler d1 迁移 SQL
+│       └── tests/
+├── TECH_SPEC.md
+├── DEPLOYMENT.md
+├── DEV_NOTE.md
 └── README.md
 ```
 
@@ -260,8 +308,8 @@ muiad/
 
 ## Roadmap
 
-- [x] **MVP-0** 单实例广告投放 + MCP + 广告渲染
-- [x] **MVP-1** 归因追踪 + 数据统计
+- [x] **MVP-0** 单实例广告投放 + MCP + 广告渲染（✅ 线上跑通）
+- [ ] **MVP-1** 归因追踪增强（UTM、跨站、去重）
 - [ ] **MVP-2** AI Agent（扫描 + 生成物料 + 自动投放 + 优化）
 - [ ] **MVP-3** 节点间通信 + 网络发现
 - [ ] **MVP-4** 积分系统 + 公共节点 all-mui-ad

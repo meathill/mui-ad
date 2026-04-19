@@ -1,6 +1,6 @@
 # 部署指南
 
-当前仅落地页（`apps/web`）已部署。Worker（REST + MCP）、Admin、Widget 待 MVP-0 后续任务完成后再上线。
+MVP-0 的 landing page 和 Worker（REST + MCP + serve + track + widget）都已上线。Admin 面板还没做。
 
 ## 线上地址
 
@@ -67,21 +67,89 @@ CLOUDFLARE_ACCOUNT_ID=fdc63eeea83ae8f5234357308b9a638b pnpm run deploy
 
 ## 端到端验证（部署后）
 
+### Landing + Waitlist
+
 ```bash
-# 首页
-curl -I https://muiad-web.meathill.workers.dev/
+curl -I https://muiad.meathill.com/
 
-# waitlist
-curl -X POST https://muiad-web.meathill.workers.dev/api/waitlist \
+curl -X POST https://muiad.meathill.com/api/waitlist \
   -H "Content-Type: application/json" \
-  -d '{"email":"you@example.com"}'     # 期望 200
-# 再发一次 → 409
-# 无效邮箱 → 400
+  -d '{"email":"you@example.com"}'     # 期望 200；重复 409；非法 400
 
-# 查 waitlist 落库
 pnpm --filter @muiad/web exec wrangler d1 execute muiad --remote \
   --command "SELECT * FROM waitlist ORDER BY id DESC LIMIT 5"
 ```
+
+### Worker REST + MCP
+
+```bash
+URL=https://api.muiad.meathill.com
+AUTH="Authorization: Bearer $MUIAD_API_KEY"
+
+# 根路由
+curl "$URL/"                                     # {"name":"muiad-api","status":"ok"}
+# 未带 bearer
+curl -sI "$URL/api/zones"                        # HTTP 401
+# 正常
+curl -sH "$AUTH" "$URL/api/zones"                # {"zones":[...]}
+
+# MCP handshake
+curl -sX POST "$URL/mcp" -H "$AUTH" -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+### 完整闭环
+
+用 MCP 工具调一圈，终端里走一遍：
+`muiad_register_product` → `muiad_create_zone` → `muiad_create_ad` →
+`GET /serve?zone=…` → `GET /track/click?...` → `muiad_get_zone_stats`。
+预期：展示量 / 点击量 各 +1。
+
+## MCP client 接入
+
+### Claude Desktop
+
+`~/Library/Application Support/Claude/claude_desktop_config.json`：
+
+```json
+{
+  "mcpServers": {
+    "muiad": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote",
+        "https://api.muiad.meathill.com/mcp",
+        "--header", "Authorization:Bearer <MUIAD_API_KEY>",
+        "--transport", "http-only"
+      ]
+    }
+  }
+}
+```
+
+`mcp-remote` 把远程 HTTP MCP 桥接成 Claude Desktop 需要的 stdio 形态；
+`--transport http-only` 关 SSE 订阅，匹配我们这套只用 POST 的实现。
+
+### Cursor
+
+Settings → MCP → Add new MCP server：
+
+```json
+{
+  "mcpServers": {
+    "muiad": {
+      "url": "https://api.muiad.meathill.com/mcp",
+      "headers": { "Authorization": "Bearer <MUIAD_API_KEY>" }
+    }
+  }
+}
+```
+
+Cursor 原生支持 HTTP MCP，不用 bridge。
+
+### 自部署节点
+
+把 URL 换成你自己的 worker 域名，key 换成 `MUIAD_API_KEY` 的值即可。
 
 ## 已知事项
 
