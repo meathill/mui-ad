@@ -1,6 +1,13 @@
 # WIP - MVP-0 开发计划
 
-> 最后更新：2026-04-14
+> 最后更新：2026-04-19
+
+## 已上线
+
+- Landing Page（`apps/web`）已部署到 Cloudflare Workers：
+  https://muiad-web.meathill.workers.dev
+- D1 `muiad` 的 `waitlist` 表已在线上，接口端到端打通（200 / 409 / 400）
+- 部署命令与资源清单见 [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 ## 目标
 
@@ -73,5 +80,6 @@
 
 ## 待定事项
 
-- Landing Page（apps/web）内容设计，MVP-0 可后置
 - Admin 是否需要登录认证（MVP-0 暂不做，依赖 Worker API Key）
+- 自定义域名 `muiad.dev` 接入：待 DNS 迁至 CF 后，dashboard 加 Custom Domain，
+  同时把 `NEXT_PUBLIC_SITE_URL` / `NEXT_PUBLIC_ASSETS_URL` 的值校准
