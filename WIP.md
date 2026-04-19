@@ -38,16 +38,15 @@
 - [x] 本地 + 远程 `muiad` D1 都 apply 完 0002
 - 已知：apps/web 的 `wrangler.jsonc` 把 `migrations_dir` 指到 `packages/db/src/migrations` 统一管理
 
-### P0-3: Worker 核心（apps/worker）
-- [ ] Hono app 初始化 + 路由骨架
-- [ ] 认证中间件（API Key 校验）
-- [ ] REST API：zones CRUD
-- [ ] REST API：products CRUD
-- [ ] REST API：ads CRUD
-- [ ] REST API：stats 查询
-- [ ] 广告投放引擎（权重选择 + impression 记录）
-- [ ] 点击追踪（click 记录 + 302 重定向）
-- [ ] 编写 API 集成测试
+### P0-3: Worker 核心（apps/worker）✅
+- [x] Hono app 初始化 + 路由骨架（入口在 `src/index.ts`）
+- [x] Bearer 认证中间件（`MUIAD_API_KEY`，走 `Authorization: Bearer <key>`）
+- [x] REST API：zones / products / ads / stats 全 CRUD，zones 创建时返回嵌入代码
+- [x] 广告投放引擎：`modules/ad-server/pick.ts` 加权随机 + impression 记录
+- [x] 点击追踪：`/track/click` 落库 + 302 重定向
+- [x] `/widget.js` 内联返回，负责抓取 `/serve` 并渲染广告
+- [x] vitest 集成测试：17 个用例全绿（auth / 三类 CRUD / serve / track / widget / pick）
+- 未部署：等 P0-4 MCP 做完一起上，需要 `wrangler secret put MUIAD_API_KEY`
 
 ### P0-4: MCP Server（apps/worker）
 - [ ] MCP Server 初始化（SSE transport）

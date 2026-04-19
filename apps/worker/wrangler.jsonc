@@ -1,21 +1,22 @@
 {
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "muiad-api",
   "main": "src/index.ts",
-  "compatibility_date": "2026-04-01",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_date": "2026-04-14",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "account_id": "fdc63eeea83ae8f5234357308b9a638b",
+  "observability": {
+    "enabled": true
+  },
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "muiad-db",
-      "database_id": "<id>"
-    }
-  ],
-  "kv_namespaces": [
-    {
-      "binding": "CACHE",
-      "id": "<id>"
+      "database_name": "muiad",
+      "database_id": "ca42d694-ebdb-4c62-984a-affa9d6fd891",
+      "migrations_dir": "../../packages/db/src/migrations"
     }
   ],
   "vars": {
-    "MUIAD_URL": "https://my-mui-ad.example.com"
+    "MUIAD_URL": "https://muiad-api.meathill.workers.dev"
   }
 }

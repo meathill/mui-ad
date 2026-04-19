@@ -1,13 +1,16 @@
 {
   "name": "@muiad/worker",
   "version": "1.0.0",
-  "description": "MuiAD Worker service",
+  "description": "MuiAD Worker — REST API + MCP Server + ad serving",
+  "type": "module",
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "build": "vite build",
-    "typegen": "wrangler types"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "cf-typegen": "wrangler types"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
@@ -15,7 +18,11 @@
     "hono": "^4.12.12"
   },
   "devDependencies": {
-    "vite": "^8.0.8",
+    "@cloudflare/workers-types": "^4.20260418.1",
+    "@libsql/client": "^0.17.2",
+    "@types/node": "^25.6.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4",
     "wrangler": "^4.82.2"
   }
 }

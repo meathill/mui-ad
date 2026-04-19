@@ -1,56 +1,24 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { basicAuth } from 'hono/basic-auth';
-import * as schema from '@muiad/db/src/schema';
-import Repository from '@muiad/db/src/repository';
+import type { HonoEnv } from './env';
+import { bearerAuth } from './middleware/auth';
+import api from './routes/api';
+import serve from './routes/serve';
+import track from './routes/track';
+import widget from './routes/widget';
 
-// 导入路由
-import mcpRoutes from './routes/mcp';
-import apiRoutes from './routes/api';
-import serveRoutes from './routes/serve';
-import trackRoutes from './routes/track';
+const app = new Hono<HonoEnv>();
 
-// 环境类型
-export interface Env {
-  DB: D1Database;
-  CACHE: KVNamespace;
-  MUIAD_URL: string;
-  MUIAD_API_KEY: string;
-}
+app.use('/serve/*', cors());
+app.use('/widget.js', cors());
 
-const app = new Hono<{ Bindings: Env }>();
+app.get('/', (c) => c.json({ name: 'muiad-api', status: 'ok' }));
 
-// 中间件
-app.use('/*', cors());
+app.use('/api/*', bearerAuth);
+app.route('/api', api);
 
-// 认证中间件
-const authMiddleware = basicAuth({
-  username: '',
-  password: (c) => c.env.MUIAD_API_KEY,
-  realm: 'MuiAD',
-});
-
-// 路由
-app.use('/api/*', authMiddleware);
-app.use('/mcp', authMiddleware);
-app.route('/api', apiRoutes);
-app.route('/mcp', mcpRoutes);
-app.route('/serve', serveRoutes);
-app.route('/track', trackRoutes);
-
-// 静态文件
-app.get('/widget.js', async (c) => {
-  const widgetContent = await c.env.CACHE.get('widget.js');
-  if (widgetContent) {
-    return c.text(widgetContent, 200, { 'Content-Type': 'application/javascript' });
-  }
-  // 从文件系统读取
-  const fs = require('fs');
-  const path = require('path');
-  const widgetPath = path.join(__dirname, '../public/widget.js');
-  const content = fs.readFileSync(widgetPath, 'utf8');
-  await c.env.CACHE.put('widget.js', content, { expirationTtl: 3600 });
-  return c.text(content, 200, { 'Content-Type': 'application/javascript' });
-});
+app.route('/serve', serve);
+app.route('/track', track);
+app.route('/widget.js', widget);
 
 export default app;

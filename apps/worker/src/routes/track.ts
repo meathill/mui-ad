@@ -1,41 +1,30 @@
+import { createDb, stats } from '@muiad/db';
 import { Hono } from 'hono';
-import Repository from '@muiad/db/src/repository';
+import type { HonoEnv } from '../env';
+import { clientIp, sha256Hex } from '../lib/hash';
 
-const app = new Hono();
+const app = new Hono<HonoEnv>();
 
 app.get('/click', async (c) => {
   const adId = c.req.query('ad');
   const zoneId = c.req.query('zone');
-  const redirectUrl = c.req.query('redirect');
-
-  if (!adId || !zoneId || !redirectUrl) {
-    return c.text('Missing required parameters', 400);
+  const redirect = c.req.query('redirect');
+  if (!adId || !zoneId || !redirect) {
+    return c.json({ error: 'Missing required parameters' }, 400);
   }
 
-  const env = c.env;
-  const repository = new Repository(env.DB);
-
-  // 记录点击
-  const ipHash = await hashIp(c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || '');
-  await repository.createClick({
+  const db = createDb(c.env.DB);
+  const ipHash = await sha256Hex(clientIp(c.req));
+  await stats.recordClick(db, {
     zoneId,
     adId,
     ipHash,
-    userAgent: c.req.header('user-agent') || undefined,
-    referer: c.req.header('referer') || undefined,
+    userAgent: c.req.header('user-agent'),
+    referer: c.req.header('referer'),
+    createdAt: new Date().toISOString(),
   });
 
-  // 重定向到目标 URL
-  return c.redirect(decodeURIComponent(redirectUrl), 302);
+  return c.redirect(redirect, 302);
 });
-
-// 简单的 IP 哈希函数
-async function hashIp(ip: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(ip);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-}
 
 export default app;
