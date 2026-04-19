@@ -1,0 +1,23 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 64 64"
+>
+  <title>MuiAD</title>
+  <g
+    text-anchor="middle"
+    font-family="'Arial Black', 'Helvetica Neue', Helvetica, sans-serif"
+    font-weight="900"
+  >
+    <g transform="translate(32 32) scale(1.15 0.72) translate(-32 -32)">
+      <text x="32" y="36" font-size="44" fill="currentColor">M</text>
+      <text
+        x="32"
+        y="54"
+        font-size="22"
+        fill="#c76a2b"
+        textLength="42"
+        lengthAdjust="spacingAndGlyphs"
+      >AD</text>
+    </g>
+  </g>
+</svg>
