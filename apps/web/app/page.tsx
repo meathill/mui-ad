@@ -1,3 +1,4 @@
+import LiveDemo from '@/components/live-demo';
 import WaitlistForm from '@/components/waitlist-form';
 
 export default function Home() {
@@ -94,9 +95,46 @@ export default function Home() {
       </section>
 
       <section className="mx-auto max-w-6xl px-6 py-20">
+        <div className="grid items-center gap-12 md:grid-cols-[1.3fr_1fr] md:gap-16">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-ember-deep">02 · 现场演示</p>
+            <h2 className="mt-4 font-serif text-4xl leading-tight md:text-5xl">
+              右边这格广告位，
+              <br />
+              是它<em className="italic text-ember-deep">自己</em>投的。
+            </h2>
+            <p className="mt-6 text-ink-soft">
+              你现在看到的 300×250 是一个真实的 MuiAD 广告位，嵌入这个 landing 本身。 广告是通过 MCP 调用创建的：
+              <span className="ml-1 font-mono text-[13px] text-ink">register_product → create_zone → create_ad</span>
+              ，全在 Claude Code 里几句话完成。
+            </p>
+            <p className="mt-4 text-ink-soft">
+              每一次你刷新这个页面都会触发一次 impression，每一次点击都会被
+              <span className="ml-1 text-ink">/track/click</span> 记下来——跟第三方站点嵌入的 体验一模一样，没有任何
+              hack。
+            </p>
+            <p className="pt-6">
+              <a
+                href="https://api.muiad.meathill.com/serve?zone=29e56581-3dcf-4164-acff-32c36bc71f77"
+                target="_blank"
+                rel="noreferrer"
+                className="font-mono text-[11px] uppercase tracking-[0.2em] text-ember-deep underline-offset-4 hover:underline"
+              >
+                直接看 /serve 返回的 JSON →
+              </a>
+            </p>
+          </div>
+
+          <div className="flex justify-center md:justify-end">
+            <LiveDemo />
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-6 py-20">
         <div className="grid gap-10 md:grid-cols-[1fr_2fr]">
           <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-ink-soft">02 · 诚实的现状</p>
+            <p className="font-mono text-[11px] uppercase tracking-[0.24em] text-ink-soft">03 · 诚实的现状</p>
             <h2 className="mt-4 font-serif text-4xl leading-tight md:text-5xl">
               我们在哪、
               <br />
