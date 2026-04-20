@@ -5,6 +5,7 @@
   "compatibility_date": "2026-04-14",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "account_id": "fdc63eeea83ae8f5234357308b9a638b",
+  "routes": [{ "pattern": "admin.muiad.meathill.com", "custom_domain": true }],
   "observability": {
     "enabled": true
   },

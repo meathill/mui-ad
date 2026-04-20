@@ -3,14 +3,17 @@
 import { Copy, PencilSimple, Pause, Play, Plus } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import type { Zone } from '@muiad/db';
+import type { Zone, ZoneStats } from '@muiad/db';
 import { apiFromConfig } from '@/lib/api';
 import { useConfig } from '@/lib/store';
+
+type StatsMap = Record<string, ZoneStats>;
 
 export default function ZonesPage() {
   const workerUrl = useConfig((s) => s.workerUrl);
   const apiKey = useConfig((s) => s.apiKey);
   const [zones, setZones] = useState<Zone[] | null>(null);
+  const [stats, setStats] = useState<StatsMap>({});
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -21,6 +24,13 @@ export default function ZonesPage() {
     try {
       const rows = await api.zones.list();
       setZones(rows);
+      // Fire stats requests in parallel; show rows immediately, fill in as they resolve
+      const entries = await Promise.all(
+        rows.map(async (z) => [z.id, await api.stats.zone(z.id).catch(() => null)] as const),
+      );
+      const next: StatsMap = {};
+      for (const [id, s] of entries) if (s) next[id] = s;
+      setStats(next);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -84,6 +94,7 @@ export default function ZonesPage() {
                 <th className="px-5 py-3">尺寸</th>
                 <th className="px-5 py-3">站点</th>
                 <th className="px-5 py-3">状态</th>
+                <th className="px-5 py-3">数据</th>
                 <th className="px-5 py-3 text-right">操作</th>
               </tr>
             </thead>
@@ -102,6 +113,9 @@ export default function ZonesPage() {
                   </td>
                   <td className="px-5 py-4">
                     <StatusPill status={z.status} />
+                  </td>
+                  <td className="px-5 py-4">
+                    <StatsCell s={stats[z.id]} />
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center justify-end gap-1">
@@ -143,6 +157,26 @@ export default function ZonesPage() {
           </table>
         )}
       </div>
+    </div>
+  );
+}
+
+function StatsCell({ s }: { s: ZoneStats | undefined }) {
+  if (!s) {
+    return <span className="font-mono text-[10px] text-ink-soft/50">—</span>;
+  }
+  if (s.impressions === 0) {
+    return <span className="font-mono text-[11px] text-ink-soft/60">无数据</span>;
+  }
+  const ctrPct = (s.ctr * 100).toFixed(1);
+  return (
+    <div className="flex items-baseline gap-2 font-mono text-[12px]">
+      <span className="text-ink">{s.impressions}</span>
+      <span className="text-ink-soft/50">展示</span>
+      <span className="text-ink-soft/40">·</span>
+      <span className="text-ink">{s.clicks}</span>
+      <span className="text-ink-soft/50">点击</span>
+      <span className="text-ember-deep">({ctrPct}%)</span>
     </div>
   );
 }

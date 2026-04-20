@@ -6,7 +6,13 @@ import { useEffect, useState } from 'react';
 import { apiFromConfig } from '@/lib/api';
 import { useConfig } from '@/lib/store';
 
-type Counts = { zones: number; products: number; ads: number };
+type Counts = {
+  zones: number;
+  products: number;
+  ads: number;
+  impressions: number;
+  clicks: number;
+};
 
 export default function Overview() {
   const workerUrl = useConfig((s) => s.workerUrl);
@@ -20,7 +26,18 @@ export default function Overview() {
     (async () => {
       try {
         const [zones, products, ads] = await Promise.all([api.zones.list(), api.products.list(), api.ads.list()]);
-        setCounts({ zones: zones.length, products: products.length, ads: ads.length });
+        const perZone = await Promise.all(
+          zones.map((z) => api.stats.zone(z.id).catch(() => ({ impressions: 0, clicks: 0, ctr: 0 }))),
+        );
+        const impressions = perZone.reduce((sum, s) => sum + s.impressions, 0);
+        const clicks = perZone.reduce((sum, s) => sum + s.clicks, 0);
+        setCounts({
+          zones: zones.length,
+          products: products.length,
+          ads: ads.length,
+          impressions,
+          clicks,
+        });
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
       }
@@ -40,10 +57,12 @@ export default function Overview() {
         <p className="mt-6 rounded-md bg-ember/10 px-4 py-3 font-mono text-xs text-ember-deep">读取数据失败：{error}</p>
       )}
 
-      <section className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <section className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
         <StatCard label="广告位" value={counts?.zones} href="/zones" />
         <StatCard label="产品" value={counts?.products} href="/products" />
         <StatCard label="广告" value={counts?.ads} href="/ads" />
+        <StatCard label="累计展示" value={counts?.impressions} />
+        <StatCard label="累计点击" value={counts?.clicks} accent />
       </section>
 
       <section className="mt-14">
@@ -59,19 +78,37 @@ export default function Overview() {
   );
 }
 
-function StatCard({ label, value, href }: { label: string; value: number | undefined; href: string }) {
-  return (
-    <Link
-      href={href}
-      className="group flex flex-col gap-2 rounded-2xl border border-rule/60 bg-paper p-6 transition-colors hover:border-ember/60"
-    >
+function StatCard({
+  label,
+  value,
+  href,
+  accent,
+}: {
+  label: string;
+  value: number | undefined;
+  href?: string;
+  accent?: boolean;
+}) {
+  const content = (
+    <>
       <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft">{label}</span>
-      <span className="font-serif text-5xl text-ink">{value ?? '—'}</span>
-      <span className="mt-1 inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ember-deep opacity-60 transition-opacity group-hover:opacity-100">
-        查看 <ArrowRight size={12} weight="bold" />
-      </span>
-    </Link>
+      <span className={`font-serif text-5xl ${accent ? 'text-ember-deep' : 'text-ink'}`}>{value ?? '—'}</span>
+      {href && (
+        <span className="mt-1 inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.18em] text-ember-deep opacity-60 transition-opacity group-hover:opacity-100">
+          查看 <ArrowRight size={12} weight="bold" />
+        </span>
+      )}
+    </>
   );
+  const base = 'flex flex-col gap-2 rounded-2xl border border-rule/60 bg-paper p-6';
+  if (href) {
+    return (
+      <Link href={href} className={`group ${base} transition-colors hover:border-ember/60`}>
+        {content}
+      </Link>
+    );
+  }
+  return <div className={base}>{content}</div>;
 }
 
 function ActionCard({ href, title, hint }: { href: string; title: string; hint: string }) {
