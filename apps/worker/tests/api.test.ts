@@ -135,4 +135,31 @@ describe('/api/ads', () => {
     );
     expect(res.status).toBe(201);
   });
+
+  it('GET /:id/zones returns the attached zones', async () => {
+    const productId = await createProduct();
+    const zoneId = await createZone();
+    const adRes = await app.request(
+      '/api/ads',
+      authed({
+        method: 'POST',
+        body: JSON.stringify({
+          productId,
+          title: 't',
+          linkUrl: 'https://p.dev',
+          zoneIds: [zoneId],
+          weight: 2,
+        }),
+      }),
+      env,
+    );
+    const ad = (await adRes.json()) as { ad: { id: string } };
+
+    const res = await app.request(`/api/ads/${ad.ad.id}/zones`, authed(), env);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { zones: Array<{ zoneId: string; weight: number }> };
+    expect(body.zones).toHaveLength(1);
+    expect(body.zones[0]?.zoneId).toBe(zoneId);
+    expect(body.zones[0]?.weight).toBe(2);
+  });
 });

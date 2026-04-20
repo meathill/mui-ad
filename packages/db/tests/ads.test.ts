@@ -86,6 +86,22 @@ describe('ads repository', () => {
     expect(await ads.get(db, ad.id)).toBeUndefined();
   });
 
+  it('listZonesOf returns the attached zones with weights', async () => {
+    const { product, zoneA, zoneB } = await seedContext(db);
+    const ad = await ads.create(db, {
+      id: crypto.randomUUID(),
+      productId: product.id,
+      title: 't',
+      linkUrl: 'https://foo.dev',
+      status: 'active',
+      createdAt: new Date().toISOString(),
+    });
+    await ads.attachToZones(db, ad.id, [zoneA.id, zoneB.id], 3);
+    const rows = await ads.listZonesOf(db, ad.id);
+    expect(rows.map((r) => r.zoneId).sort()).toEqual([zoneA.id, zoneB.id].sort());
+    expect(rows.every((r) => r.weight === 3)).toBe(true);
+  });
+
   it('detachFromZones removes the join rows', async () => {
     const { product, zoneA, zoneB } = await seedContext(db);
     const ad = await ads.create(db, {

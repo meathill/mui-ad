@@ -16,6 +16,12 @@ app.get('/:id', async (c) => {
   return c.json({ ad: row });
 });
 
+app.get('/:id/zones', async (c) => {
+  const db = createDb(c.env.DB);
+  const zones = await ads.listZonesOf(db, c.req.param('id'));
+  return c.json({ zones });
+});
+
 app.post('/', async (c) => {
   const body = (await c.req.json()) as {
     productId: string;

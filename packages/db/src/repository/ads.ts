@@ -50,6 +50,11 @@ export async function detachFromZones(db: Db, adId: string, zoneIds: string[]): 
   await db.delete(zoneAds).where(and(eq(zoneAds.adId, adId), inArray(zoneAds.zoneId, zoneIds)));
 }
 
+/** All zones an ad is currently attached to, with join weights. Used by admin edit UI. */
+export async function listZonesOf(db: Db, adId: string): Promise<Array<{ zoneId: string; weight: number }>> {
+  return db.select({ zoneId: zoneAds.zoneId, weight: zoneAds.weight }).from(zoneAds).where(eq(zoneAds.adId, adId));
+}
+
 /** Ads eligible to serve on a zone: active ads attached to it, with join weight. */
 export async function listActiveByZone(db: Db, zoneId: string): Promise<Array<{ ad: Ad; weight: number }>> {
   const rows = await db

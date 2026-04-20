@@ -72,8 +72,9 @@
 - [x] `/setup` 首次配置页（校验 URL + key，连不上直接报错）
 - [x] 概览页（zones / products / ads 总数 + quick start 入口）
 - [x] 广告位管理（列表、创建带尺寸预设、暂停/启用、复制嵌入代码）
-- [ ] 产品管理页面（阶段 2）
-- [ ] 广告管理页面（阶段 2）
+- [x] 产品管理页面（列表 / 登记 / 编辑 / 删除）
+- [x] 广告管理页面（列表 / 创建含产品选择 + 广告位多选 / 编辑含
+      暂停/启用 + zone 差分挂/卸 / 删除确认）
 - [ ] 数据统计页面（阶段 3，考虑进 zone 详情或单独页）
 - [x] 部署到 CF Workers：https://muiad-admin.meathill.workers.dev
 - [ ] 绑 admin.muiad.meathill.com 自定义域名（可选）

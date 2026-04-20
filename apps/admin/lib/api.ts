@@ -50,6 +50,8 @@ export interface Api {
   };
   ads: {
     list: () => Promise<Ad[]>;
+    get: (id: string) => Promise<Ad>;
+    listZones: (id: string) => Promise<Array<{ zoneId: string; weight: number }>>;
     create: (data: {
       productId: string;
       title: string;
@@ -59,6 +61,7 @@ export interface Api {
       weight?: number;
       zoneIds?: string[];
     }) => Promise<Ad>;
+    update: (id: string, patch: Partial<NewAd>) => Promise<Ad>;
     setStatus: (id: string, status: 'active' | 'paused') => Promise<Ad>;
     remove: (id: string) => Promise<void>;
     attach: (id: string, zoneIds: string[], weight?: number) => Promise<void>;
@@ -116,7 +119,17 @@ export function makeApi(workerUrl: string, apiKey: string): Api {
     },
     ads: {
       list: async () => (await r<{ ads: Ad[] }>('/api/ads')).ads,
+      get: async (id) => (await r<{ ad: Ad }>(`/api/ads/${id}`)).ad,
+      listZones: async (id) =>
+        (await r<{ zones: Array<{ zoneId: string; weight: number }> }>(`/api/ads/${id}/zones`)).zones,
       create: async (data) => (await r<{ ad: Ad }>('/api/ads', { method: 'POST', body: JSON.stringify(data) })).ad,
+      update: async (id, patch) =>
+        (
+          await r<{ ad: Ad }>(`/api/ads/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(patch),
+          })
+        ).ad,
       setStatus: async (id, status) =>
         (
           await r<{ ad: Ad }>(`/api/ads/${id}`, {
