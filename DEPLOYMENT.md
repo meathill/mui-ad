@@ -10,6 +10,9 @@ MVP-0 的 landing page 和 Worker（REST + MCP + serve + track + widget）都已
   - REST：`/api/products|zones|ads|stats`（`Authorization: Bearer <MUIAD_API_KEY>`）
   - MCP：`POST /mcp`（JSON-RPC 2.0，同样走 Bearer）
   - 公开：`/serve?zone=<id>`、`/track/click`、`/widget.js`
+- Admin Panel：https://muiad-admin.meathill.workers.dev（未绑正式域名）
+  - 首次访问会进 `/setup` 输入 Worker URL + API key，存 localStorage
+  - robots `noindex, nofollow`
 
 ## Cloudflare 资源
 
@@ -17,6 +20,7 @@ MVP-0 的 landing page 和 Worker（REST + MCP + serve + track + widget）都已
 | --- | --- | --- |
 | Worker | `apps/web` OpenNext 产物 | `muiad-web` |
 | Worker | `apps/worker` Hono REST + MCP | `muiad-api` |
+| Worker | `apps/admin` Admin Panel (OpenNext) | `muiad-admin` |
 | D1 | 业务库（waitlist + products/zones/ads/zone_ads/impressions/clicks） | `muiad` / `ca42d694-ebdb-4c62-984a-affa9d6fd891` |
 | D1 | OpenNext tag cache | `tag-cache` / `5f26868d-5d24-4645-8954-a27168f6fcd6` |
 | R2 | OpenNext 增量缓存 | `site-cache` |
@@ -52,6 +56,19 @@ cd apps/web && pnpm exec opennextjs-cloudflare build && \
 > 若 `populate-cache` 抛 "You must be logged in to use wrangler dev in remote mode" / "logged in with an API Token"，用上面的兜底命令——`opennextjs-cloudflare build` 产出 `.open-next/worker.js` 后直接 `wrangler deploy`，跳过 populate。我们的落地页没有 ISR/SSG 缓存内容，跳过无副作用。
 >
 > CI（Cloudflare Workers Builds）的自动部署目前也会撞上同一个坑，暂未修——见 [DEV_NOTE.md](./DEV_NOTE.md)。
+
+## Admin 部署（apps/admin）
+
+```bash
+cd apps/admin
+CLOUDFLARE_ACCOUNT_ID=fdc63eeea83ae8f5234357308b9a638b pnpm run deploy
+```
+
+Admin 不用 R2 incremental cache（`open-next.config.ts` 空配置），不会撞上
+`populate-cache` 的 OAuth 坑，直接 `pnpm run deploy` 就能过。
+
+没用任何 Cloudflare 绑定（D1/KV/R2 都不需要）——Admin 所有数据都走 worker
+REST API 取，Bearer key 存在访问者浏览器的 localStorage。
 
 ## Worker 部署（apps/worker）
 

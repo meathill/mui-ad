@@ -75,7 +75,8 @@
 - [ ] 产品管理页面（阶段 2）
 - [ ] 广告管理页面（阶段 2）
 - [ ] 数据统计页面（阶段 3，考虑进 zone 详情或单独页）
-- [ ] 部署到 CF Workers（admin.muiad.meathill.com，阶段 3）
+- [x] 部署到 CF Workers：https://muiad-admin.meathill.workers.dev
+- [ ] 绑 admin.muiad.meathill.com 自定义域名（可选）
 
 ### P0-7: 部署与验证
 - [x] 部署 Worker 到 CF Workers（`muiad-api` → `api.muiad.meathill.com`）
