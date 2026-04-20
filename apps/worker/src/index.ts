@@ -10,8 +10,21 @@ import widget from './routes/widget';
 
 const app = new Hono<HonoEnv>();
 
+// Public endpoints — permissive CORS so widget.js + /serve can be embedded anywhere.
 app.use('/serve/*', cors());
 app.use('/widget.js', cors());
+
+// Authed endpoints — allow any origin but require Bearer.
+// CORS must come BEFORE bearerAuth so OPTIONS preflight (no Authorization header)
+// gets a 204 instead of 401.
+const authedCors = cors({
+  origin: '*',
+  allowHeaders: ['Content-Type', 'Authorization'],
+  allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  maxAge: 600,
+});
+app.use('/api/*', authedCors);
+app.use('/mcp', authedCors);
 
 app.get('/', (c) => c.json({ name: 'muiad-api', status: 'ok' }));
 
