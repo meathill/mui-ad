@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { Zone } from '@muiad/db';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { apiFromConfig } from '@/lib/api';
 import { useConfig } from '@/lib/store';
 
@@ -28,7 +29,7 @@ export default function EditZonePage() {
   const [width, setWidth] = useState(300);
   const [height, setHeight] = useState(250);
   const [submitting, setSubmitting] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -67,16 +68,14 @@ export default function EditZonePage() {
   }
 
   async function handleDelete() {
-    if (!confirm('确认删除这个广告位？相关的投放关系和统计数据都会受影响。')) return;
     const api = apiFromConfig(workerUrl, apiKey);
     if (!api) return;
-    setDeleting(true);
     try {
       await api.zones.remove(id);
       router.replace('/zones');
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-      setDeleting(false);
+      throw e;
     }
   }
 
@@ -192,15 +191,24 @@ export default function EditZonePage() {
           </div>
           <button
             type="button"
-            onClick={handleDelete}
-            disabled={deleting}
-            className="inline-flex items-center gap-1.5 rounded-full border border-rule px-4 py-2 font-mono text-[11px] uppercase tracking-[0.16em] text-ink-soft transition-colors hover:border-ember-deep hover:text-ember-deep disabled:opacity-50"
+            onClick={() => setConfirmOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-danger/40 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.16em] text-danger-deep transition-colors hover:bg-danger hover:text-paper"
           >
             <Trash size={12} />
-            {deleting ? '删除中…' : '删除'}
+            删除
           </button>
         </div>
       </form>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="删除这个广告位？"
+        description={`「${zone.name}」的投放关系会一起清掉，相关的展示/点击历史保留但不再关联。这个操作不能撤销。`}
+        confirmLabel="删除"
+        destructive
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
