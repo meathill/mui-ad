@@ -8,6 +8,8 @@
   --color-rule: oklch(0.86 0.015 80);
   --color-ember: oklch(0.68 0.19 45);
   --color-ember-deep: oklch(0.54 0.2 40);
+  --color-grass: oklch(0.66 0.15 150);
+  --color-grass-deep: oklch(0.48 0.14 152);
 
   --font-serif: var(--font-display), "Iowan Old Style", "Palatino", serif;
   --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
