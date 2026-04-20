@@ -1,6 +1,6 @@
 'use client';
 
-import { Copy, Pause, Play, Plus } from '@phosphor-icons/react';
+import { Copy, PencilSimple, Pause, Play, Plus } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import type { Zone } from '@muiad/db';
@@ -129,6 +129,12 @@ export default function ZonesPage() {
                           </>
                         )}
                       </button>
+                      <Link
+                        href={`/zones/${z.id}/edit`}
+                        className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs text-ink-soft hover:bg-rule/40 hover:text-ink"
+                      >
+                        <PencilSimple size={12} /> 编辑
+                      </Link>
                     </div>
                   </td>
                 </tr>

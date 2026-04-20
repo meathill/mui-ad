@@ -44,6 +44,7 @@ export interface Api {
       width: number;
       height: number;
     }) => Promise<{ zone: Zone; embedCode: string }>;
+    update: (id: string, patch: Partial<NewZone>) => Promise<Zone>;
     setStatus: (id: string, status: ZoneStatus) => Promise<Zone>;
     remove: (id: string) => Promise<void>;
   };
@@ -97,6 +98,13 @@ export function makeApi(workerUrl: string, apiKey: string): Api {
           method: 'POST',
           body: JSON.stringify(data),
         }),
+      update: async (id, patch) =>
+        (
+          await r<{ zone: Zone }>(`/api/zones/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(patch),
+          })
+        ).zone,
       setStatus: async (id, status) =>
         (
           await r<{ zone: Zone }>(`/api/zones/${id}`, {
