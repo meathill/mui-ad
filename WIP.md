@@ -66,7 +66,7 @@
 
 ### P0-6: Admin Panel（apps/admin）
 - [x] Next.js 16 + OpenNext 对齐 apps/web 的 Tailwind v4 + editorial 风格
-  （跳过 Coss UI，直接用 Tailwind + Phosphor 保持栈最小）
+  （放弃 Coss UI 方案，UI 组件自建基于 Base UI，保品牌一致）
 - [x] Worker API 客户端 `lib/api.ts`（Bearer、统一错误、typed via `@muiad/db`）
 - [x] 配置管理 `lib/store.ts`（Zustand + localStorage 持久化）+ `RequireKey` 守卫
 - [x] `/setup` 首次配置页（校验 URL + key，连不上直接报错）

@@ -26,8 +26,8 @@ MVP-0 只做单实例。不涉及网络通信、AI Agent、积分系统。
 | Admin 面板 | Next.js 16.2 + React 19 | App Router，OpenNext 部署到 CF |
 | Landing Page | Next.js 16.2 + React 19 | 宣传页面，静态为主 |
 | 状态管理 | Zustand | 轻量，适合 Admin 场景 |
-| CSS | TailwindCSS v4 | 与 Coss UI 配合 |
-| 组件库 | Coss UI（shadcn CLI） | Cal.com 出品，基于 Base UI |
+| CSS | TailwindCSS v4 | 统一栈，@theme 定义品牌 token |
+| 组件库 | 自建（基于 Base UI primitives） | 按需 port / 自写，保品牌一致性，避免 shadcn 通用 neutral 风 |
 | 图标库 | Phosphor Icons | 轻量、风格统一 |
 | ORM | Drizzle ORM | 类型安全，CF D1 适配器成熟 |
 | 数据库迁移 | wrangler d1 migrations | CF 原生迁移方案 |
@@ -107,7 +107,7 @@ muiad/
 │   │   │   │   └── stats/            数据统计
 │   │   │   └── layout.tsx
 │   │   ├── components/
-│   │   │   └── ui/              Coss UI 组件
+│   │   │   └── ui/              自建 UI 组件
 │   │   ├── lib/
 │   │   │   ├── api.ts           调用 Worker REST API 的客户端
 │   │   │   └── stores/          Zustand stores
@@ -120,7 +120,7 @@ muiad/
 │       │   ├── page.tsx            首页
 │       │   └── layout.tsx
 │       ├── components/
-│       │   └── ui/              Coss UI 组件
+│       │   └── ui/              自建 UI 组件
 │       └── package.json
 │
 ├── packages/
@@ -465,4 +465,6 @@ Admin 通过 REST API 调用 Worker，不直接访问 D1。
 - Admin 通过 REST API 与 Worker 通信，不直接访问 D1
 - Schema 和迁移放在 `packages/db`，Worker 引用
 - 测试覆盖：MCP Tool 单元测试 + 广告投放集成测试
-- Coss UI 组件通过 `pnpm dlx shadcn@latest add @coss/ui` 安装
+- UI 组件自建：基于 `@base-ui-components/react` 原语，按 shadcn 方式放在
+  `apps/admin/components/ui/`；沿用 ember / ink / paper / grass / danger
+  设计 token，与 apps/web 视觉一致
