@@ -80,7 +80,10 @@ echo "<your-key>" | pnpm wrangler secret put MUIAD_API_KEY
 CLOUDFLARE_ACCOUNT_ID=fdc63eeea83ae8f5234357308b9a638b pnpm run deploy
 ```
 
-当前生产密钥：`muimui`（临时，压测完要换成强密钥）。
+生产密钥通过 `wrangler secret put MUIAD_API_KEY` 设，只在 CF 侧存储。
+生成建议：`node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`。
+密钥不要 commit 到 repo；需要给 admin 用时，第一次手动贴进 setup 页，
+之后存在访问者浏览器的 localStorage。
 
 ## 端到端验证（部署后）
 

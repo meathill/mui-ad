@@ -86,7 +86,7 @@ export default function SetupPage() {
             required
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            placeholder="muimui"
+            placeholder="你 worker 上 wrangler secret put 的那个 key"
             className="w-full rounded-lg border border-rule bg-paper px-4 py-3 font-mono text-sm focus:border-ember focus:outline-none focus:ring-2 focus:ring-ember/20"
           />
         </div>

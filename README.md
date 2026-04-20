@@ -151,15 +151,15 @@ AI 推广
 
 ---
 
-## 立即试用（无需部署）
+## MCP 接入
 
-我们跑了一个公共测试节点在 https://api.muiad.meathill.com 。把下面的 MCP 配置贴进 Claude Desktop / Cursor，就能直接让 AI 操作一个 MuiAD 节点：
+MuiAD 是"自托管"产品——每个人跑自己的节点。下面假设你已经按 **自部署** 一节建好了自己的 worker（`api.your-muiad.com`）并设好了 `MUIAD_API_KEY`。
 
 **Claude Code** — 一行 CLI：
 
 ```bash
-claude mcp add --transport http muiad https://api.muiad.meathill.com/mcp \
-  --header "Authorization: Bearer muimui"
+claude mcp add --scope user --transport http muiad https://api.your-muiad.com/mcp \
+  --header "Authorization: Bearer $MUIAD_API_KEY"
 ```
 
 或编辑 `~/.claude.json` / 项目 `.mcp.json`：
@@ -169,8 +169,8 @@ claude mcp add --transport http muiad https://api.muiad.meathill.com/mcp \
   "mcpServers": {
     "muiad": {
       "type": "http",
-      "url": "https://api.muiad.meathill.com/mcp",
-      "headers": { "Authorization": "Bearer muimui" }
+      "url": "https://api.your-muiad.com/mcp",
+      "headers": { "Authorization": "Bearer <MUIAD_API_KEY>" }
     }
   }
 }
@@ -187,8 +187,8 @@ claude mcp add --transport http muiad https://api.muiad.meathill.com/mcp \
       "command": "npx",
       "args": [
         "-y", "mcp-remote",
-        "https://api.muiad.meathill.com/mcp",
-        "--header", "Authorization:Bearer muimui",
+        "https://api.your-muiad.com/mcp",
+        "--header", "Authorization:Bearer <MUIAD_API_KEY>",
         "--transport", "http-only"
       ]
     }
@@ -202,8 +202,8 @@ claude mcp add --transport http muiad https://api.muiad.meathill.com/mcp \
 {
   "mcpServers": {
     "muiad": {
-      "url": "https://api.muiad.meathill.com/mcp",
-      "headers": { "Authorization": "Bearer muimui" }
+      "url": "https://api.your-muiad.com/mcp",
+      "headers": { "Authorization": "Bearer <MUIAD_API_KEY>" }
     }
   }
 }
@@ -213,7 +213,7 @@ claude mcp add --transport http muiad https://api.muiad.meathill.com/mcp \
 
 > 帮我用 MuiAD 登记一个产品叫 foo-cli，URL 是 https://foo.dev，然后创建一个 300×250 的广告位，生成一条广告投到那个位置上。
 
-> ⚠️ 目前的公共节点 + 临时 key (`muimui`) 是给快速体验用的，共享、可能随时被清库或换密钥。自己要认真用就自己部署一个。
+> 想先看看它长什么样？访问 [muiad.meathill.com](https://muiad.meathill.com)——首页右边那格 300×250 就是本产品在自己 landing 上投的广告（通过同一套 MCP 调用创建）。
 
 ---
 
