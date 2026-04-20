@@ -1,43 +1,28 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-rgb: 249, 250, 251;
+@theme {
+  --color-ink: oklch(0.18 0.01 80);
+  --color-ink-soft: oklch(0.42 0.012 80);
+  --color-paper: oklch(0.985 0.008 85);
+  --color-paper-deep: oklch(0.955 0.015 80);
+  --color-rule: oklch(0.86 0.015 80);
+  --color-ember: oklch(0.68 0.19 45);
+  --color-ember-deep: oklch(0.54 0.2 40);
+
+  --font-serif: var(--font-display), "Iowan Old Style", "Palatino", serif;
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-code), ui-monospace, "JetBrains Mono", monospace;
 }
 
+html,
 body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-rgb));
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
 }
 
-@layer components {
-  .btn {
-    @apply px-4 py-2 rounded-md font-medium transition-colors;
-  }
-
-  .btn-primary {
-    @apply bg-blue-600 text-white hover:bg-blue-700;
-  }
-
-  .btn-secondary {
-    @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
-  }
-
-  .card {
-    @apply bg-white rounded-lg shadow p-6;
-  }
-
-  .input {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500;
-  }
-
-  .label {
-    @apply block text-sm font-medium text-gray-700 mb-1;
-  }
-
-  .form-group {
-    @apply mb-4;
-  }
+::selection {
+  background: var(--color-ember);
+  color: var(--color-paper);
 }

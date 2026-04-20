@@ -65,14 +65,17 @@
 - [ ] 异步加载，不阻塞页面
 
 ### P0-6: Admin Panel（apps/admin）
-- [ ] Next.js + OpenNext 初始化
-- [ ] 安装 Coss UI + Phosphor Icons
-- [ ] Worker API 客户端（lib/api.ts）
-- [ ] 概览页面
-- [ ] 广告位管理页面（列表、创建、暂停/启用、嵌入代码）
-- [ ] 产品管理页面
-- [ ] 广告管理页面
-- [ ] 数据统计页面
+- [x] Next.js 16 + OpenNext 对齐 apps/web 的 Tailwind v4 + editorial 风格
+  （跳过 Coss UI，直接用 Tailwind + Phosphor 保持栈最小）
+- [x] Worker API 客户端 `lib/api.ts`（Bearer、统一错误、typed via `@muiad/db`）
+- [x] 配置管理 `lib/store.ts`（Zustand + localStorage 持久化）+ `RequireKey` 守卫
+- [x] `/setup` 首次配置页（校验 URL + key，连不上直接报错）
+- [x] 概览页（zones / products / ads 总数 + quick start 入口）
+- [x] 广告位管理（列表、创建带尺寸预设、暂停/启用、复制嵌入代码）
+- [ ] 产品管理页面（阶段 2）
+- [ ] 广告管理页面（阶段 2）
+- [ ] 数据统计页面（阶段 3，考虑进 zone 详情或单独页）
+- [ ] 部署到 CF Workers（admin.muiad.meathill.com，阶段 3）
 
 ### P0-7: 部署与验证
 - [x] 部署 Worker 到 CF Workers（`muiad-api` → `api.muiad.meathill.com`）

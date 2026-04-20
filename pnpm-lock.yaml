@@ -14,15 +14,18 @@ importers:
 
   apps/admin:
     dependencies:
+      '@muiad/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@opennextjs/cloudflare':
         specifier: ^1.19.1
         version: 1.19.1(next@16.2.3(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(wrangler@4.82.2(@cloudflare/workers-types@4.20260418.1))
+      '@phosphor-icons/react':
+        specifier: ^2.1.10
+        version: 2.1.10(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       next:
         specifier: ^16.2.3
         version: 16.2.3(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
-      phosphor-react:
-        specifier: ^1.4.1
-        version: 1.4.1(react@19.2.5)
       react:
         specifier: ^19.2.5
         version: 19.2.5
@@ -36,6 +39,9 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(@types/react@19.2.14)(react@19.2.5)(use-sync-external-store@1.6.0(react@19.2.5))
     devDependencies:
+      '@tailwindcss/postcss':
+        specifier: ^4.2.2
+        version: 4.2.2
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.14
@@ -3073,12 +3079,6 @@ packages:
   pathval@2.0.1:
     resolution: {integrity: sha512-//nshmD55c46FuFw26xV/xFAaB5HF9Xdap7HJBBnrKdAd6/GxDBaNA1870O79+9ueg61cZLSVc+OaFlfmObYVQ==}
     engines: {node: '>= 14.16'}
-
-  phosphor-react@1.4.1:
-    resolution: {integrity: sha512-gO5j7U0xZrdglTAYDYPACU4xDOFBTJmptrrB/GeR+tHhCZF3nUMyGmV/0hnloKjuTrOmpSFlbfOY78H39rgjUQ==}
-    engines: {node: '>=10'}
-    peerDependencies:
-      react: '>=16'
 
   picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
@@ -6473,10 +6473,6 @@ snapshots:
   pathe@2.0.3: {}
 
   pathval@2.0.1: {}
-
-  phosphor-react@1.4.1(react@19.2.5):
-    dependencies:
-      react: 19.2.5
 
   picocolors@1.1.1: {}
 
