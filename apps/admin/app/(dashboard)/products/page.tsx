@@ -72,8 +72,10 @@ export default function ProductsPage() {
               {products.map((p) => (
                 <tr key={p.id} className="border-b border-rule/40 last:border-0">
                   <td className="px-5 py-4">
-                    <div className="font-medium">{p.name}</div>
-                    <div className="font-mono text-[10px] text-ink-soft/70">{p.id}</div>
+                    <Link href={`/products/${p.id}/edit`} className="group/name block hover:text-ember-deep">
+                      <div className="font-medium underline-offset-4 group-hover/name:underline">{p.name}</div>
+                      <div className="font-mono text-[10px] text-ink-soft/70">{p.id}</div>
+                    </Link>
                   </td>
                   <td className="px-5 py-4 font-mono text-[12px] text-ink-soft">
                     <a href={p.url} target="_blank" rel="noreferrer" className="hover:text-ember-deep hover:underline">

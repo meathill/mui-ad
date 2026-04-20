@@ -102,8 +102,10 @@ export default function ZonesPage() {
               {zones.map((z) => (
                 <tr key={z.id} className="border-b border-rule/40 last:border-0">
                   <td className="px-5 py-4">
-                    <div className="font-medium">{z.name}</div>
-                    <div className="font-mono text-[10px] text-ink-soft/70">{z.id}</div>
+                    <Link href={`/zones/${z.id}/edit`} className="group/name block hover:text-ember-deep">
+                      <div className="font-medium underline-offset-4 group-hover/name:underline">{z.name}</div>
+                      <div className="font-mono text-[10px] text-ink-soft/70">{z.id}</div>
+                    </Link>
                   </td>
                   <td className="px-5 py-4 font-mono text-[13px]">
                     {z.width} × {z.height}

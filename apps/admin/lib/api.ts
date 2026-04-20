@@ -70,6 +70,9 @@ export interface Api {
   stats: {
     zone: (zoneId: string) => Promise<ZoneStats & { zoneId: string }>;
   };
+  uploads: {
+    create: (file: File) => Promise<{ key: string; url: string; contentType: string; size: number }>;
+  };
 }
 
 export function makeApi(workerUrl: string, apiKey: string): Api {
@@ -151,6 +154,28 @@ export function makeApi(workerUrl: string, apiKey: string): Api {
     },
     stats: {
       zone: (zoneId) => r<ZoneStats & { zoneId: string }>(`/api/stats/zones/${zoneId}`),
+    },
+    uploads: {
+      create: async (file) => {
+        const form = new FormData();
+        form.append('file', file);
+        const res = await fetch(`${workerUrl}/uploads`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${apiKey}` },
+          body: form,
+        });
+        const body = (await res.json()) as {
+          key: string;
+          url: string;
+          contentType: string;
+          size: number;
+          error?: string;
+        };
+        if (!res.ok) {
+          throw new ApiError(res.status, body.error ?? `HTTP ${res.status}`);
+        }
+        return body;
+      },
     },
   };
 }

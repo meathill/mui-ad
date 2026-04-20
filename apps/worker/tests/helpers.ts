@@ -9,9 +9,35 @@ export const API_KEY = 'test-key';
 
 export type TestEnv = {
   DB: unknown; // libsql client, typed as D1Database at call boundary
+  UPLOADS: unknown;
   MUIAD_URL: string;
   MUIAD_API_KEY: string;
 };
+
+/** Minimal in-memory R2Bucket stub: supports put/get with contentType + etag. */
+function makeR2(): unknown {
+  const store = new Map<string, { body: ArrayBuffer; contentType?: string }>();
+  return {
+    put: async (key: string, body: ArrayBuffer, opts?: { httpMetadata?: { contentType?: string } }) => {
+      store.set(key, { body, contentType: opts?.httpMetadata?.contentType });
+      return { key, size: body.byteLength };
+    },
+    get: async (key: string) => {
+      const row = store.get(key);
+      if (!row) return null;
+      return {
+        body: row.body,
+        httpEtag: `"${key}"`,
+        writeHttpMetadata: (h: Headers) => {
+          if (row.contentType) h.set('content-type', row.contentType);
+        },
+      };
+    },
+    delete: async (key: string) => {
+      store.delete(key);
+    },
+  };
+}
 
 async function applyMigrations(client: ReturnType<typeof createClient>) {
   const files = (await readdir(MIGRATIONS_DIR)).filter((f) => f.endsWith('.sql')).sort();
@@ -76,6 +102,7 @@ export async function makeEnv(): Promise<TestEnv> {
   await applyMigrations(client);
   return {
     DB: toD1(client),
+    UPLOADS: makeR2(),
     MUIAD_URL: 'https://test.muiad.local',
     MUIAD_API_KEY: API_KEY,
   };

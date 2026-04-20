@@ -1,5 +1,6 @@
 export interface Env {
   DB: D1Database;
+  UPLOADS: R2Bucket;
   MUIAD_URL: string;
   /** Set via `wrangler secret put MUIAD_API_KEY`. */
   MUIAD_API_KEY: string;

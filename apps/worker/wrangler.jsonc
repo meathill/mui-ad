@@ -16,6 +16,12 @@
       "migrations_dir": "../../packages/db/src/migrations"
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "UPLOADS",
+      "bucket_name": "muiad-uploads"
+    }
+  ],
   "vars": {
     "MUIAD_URL": "https://api.muiad.meathill.com"
   }

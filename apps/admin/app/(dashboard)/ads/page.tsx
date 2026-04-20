@@ -91,8 +91,10 @@ export default function AdsPage() {
               {ads.map((a) => (
                 <tr key={a.id} className="border-b border-rule/40 last:border-0">
                   <td className="px-5 py-4">
-                    <div className="font-medium">{a.title}</div>
-                    <div className="font-mono text-[10px] text-ink-soft/70">{a.id}</div>
+                    <Link href={`/ads/${a.id}/edit`} className="group/name block hover:text-ember-deep">
+                      <div className="font-medium underline-offset-4 group-hover/name:underline">{a.title}</div>
+                      <div className="font-mono text-[10px] text-ink-soft/70">{a.id}</div>
+                    </Link>
                   </td>
                   <td className="px-5 py-4 text-ink-soft">{productMap.get(a.productId)?.name ?? '—'}</td>
                   <td className="px-5 py-4 font-mono text-[13px]">{a.weight}</td>

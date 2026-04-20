@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import type { Ad, Product, Zone } from '@muiad/db';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Field, inputClass, inputMonoClass } from '@/components/ui/field';
+import { UploadInput } from '@/components/ui/upload-input';
 import { apiFromConfig } from '@/lib/api';
 import { useConfig } from '@/lib/store';
 
@@ -145,8 +146,8 @@ export default function EditAdPage() {
           />
         </Field>
 
-        <Field label="Banner 图片 URL">
-          <input type="url" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className={inputMonoClass} />
+        <Field label="Banner 图片" hint="拖拽或点击替换上传到 R2">
+          <UploadInput value={imageUrl} onChange={setImageUrl} />
         </Field>
 
         <Field label="落地页 URL">
