@@ -3,6 +3,7 @@
 import type {
   Ad,
   AiGeneration,
+  ApiKeyPublic,
   ConversionByAdRow,
   ConversionsSummary,
   NewAd,
@@ -117,6 +118,12 @@ export interface Api {
       claimed: { products: number; zones: number; ads: number; aiGenerations: number };
       ownerId: string;
     }>;
+  };
+  apiKeys: {
+    list: () => Promise<ApiKeyPublic[]>;
+    /** `raw` 只在创建时返回一次；展示完要让用户自己复制走。 */
+    create: (name: string) => Promise<{ key: ApiKeyPublic; raw: string }>;
+    revoke: (id: string) => Promise<void>;
   };
 }
 
@@ -267,6 +274,15 @@ export function makeApi(workerUrl: string, apiKey: string): Api {
           claimed: { products: number; zones: number; ads: number; aiGenerations: number };
           ownerId: string;
         }>('/api/admin/claim-orphans', { method: 'POST', body: '{}' }),
+    },
+    apiKeys: {
+      list: async () => (await r<{ keys: ApiKeyPublic[] }>('/api/api-keys')).keys,
+      create: (name) =>
+        r<{ key: ApiKeyPublic; raw: string }>('/api/api-keys', {
+          method: 'POST',
+          body: JSON.stringify({ name }),
+        }),
+      revoke: (id) => r<void>(`/api/api-keys/${id}`, { method: 'DELETE' }),
     },
   };
 }

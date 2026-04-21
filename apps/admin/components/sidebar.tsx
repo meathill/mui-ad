@@ -3,6 +3,7 @@
 import {
   ChartBar,
   Gear,
+  Key,
   Megaphone,
   Package,
   Sparkle,
@@ -23,6 +24,7 @@ const NAV = [
   { href: '/ads', label: '广告', icon: Megaphone },
   { href: '/ai-generations', label: 'AI 历史', icon: Sparkle },
   { href: '/users', label: '用户', icon: Users, adminOnly: true },
+  { href: '/api-keys', label: 'API Keys', icon: Key },
   { href: '/account', label: '我的账号', icon: User },
   { href: '/settings', label: '节点配置', icon: SlidersHorizontal },
 ];
