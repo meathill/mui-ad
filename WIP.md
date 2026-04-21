@@ -1,6 +1,6 @@
 # WIP - MVP-0 开发计划
 
-> 最后更新：2026-04-19
+> 最后更新：2026-04-21
 
 ## 已上线
 
@@ -108,8 +108,28 @@
       - zones 列表的"数据"列整块变 link 点进去
       - 线上 landing zone 实时数据：27 展示 / 5 点击 / 18.5% CTR / 1 signup
 
+## 用户体系 Phase A–D ✅（已上线）
+
+2026-04-21 完成；workers 已部署，D1 migration 0006-0009 已 apply 到本地 + 远程。
+
+- **Phase A**：引入 better-auth（email + password），`/auth/*` 挂 worker；admin
+  DashboardLayout 套 `RequireSession`。migration 0006。
+- **Phase B**：better-auth admin plugin；第一个注册的人自动 admin（第二个起
+  `/signup` 自动关闭），后续新账号由 admin 在 `/users` 直接建（邮箱 + 初始密码发
+  给用户，用户登录后去 `/account` 改密码）。不做邀请码。migration 0007。
+- **Phase C**：`products / zones / ads / ai_generations` 加 `owner_id`，repo 层
+  按 ownerId 过滤，session → user；root key / MCP → 跨用户。
+  `/api/admin/claim-orphans` 一键把 owner_id IS NULL 的历史数据认领到当前用户。
+  migration 0008。
+- **Phase D**：per-user API keys。`muiad_<base64url 32B>` 原始 key 只在生成时
+  返回一次，DB 只存 sha256 hash。中间件鉴权顺序：session > `muiad_*` key >
+  `MUIAD_API_KEY`。`/api-keys` 页生成 / 列出 / 撤销，命中时 `waitUntil` 异步更新
+  `last_used_at`。migration 0009。
+
 ## 待定事项
 
-- Admin 是否需要登录认证（MVP-0 暂不做，依赖 Worker API Key）
 - 自定义域名 `muiad.dev` 接入：待 DNS 迁至 CF 后，dashboard 加 Custom Domain，
   同时把 `NEXT_PUBLIC_SITE_URL` / `NEXT_PUBLIC_ASSETS_URL` 的值校准
+- MCP tool 目前仍用 root key 鉴权，下游 handler 在 root 模式下写入时 owner_id
+  为 NULL；要不要把 MCP 也迁到 per-user key、让 MCP 创建的数据自动归属用户，
+  等下次迭代决定（对 CI / 多实例节点编排有影响）

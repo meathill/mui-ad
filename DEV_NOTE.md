@@ -4,6 +4,47 @@
 
 ## 技术决策
 
+### 用户体系用 better-auth + admin plugin，不自己造
+- **依据**：better-auth 的 drizzleAdapter 和 SQLite schema 正好能对得上 D1；
+  admin plugin 自带 listUsers / createUser / removeUser / setUserPassword，省了一
+  整层用户管理代码
+- **没选 Clerk / Auth0 / Supabase Auth**：都要外部依赖或托管账号，违背"自托管
+  为先"的定位。better-auth 完全跑在 worker 内，数据全在你自己的 D1
+- **没有邀请码机制**：最初想做 invite table + token，和 owner 沟通后简化为"admin
+  直接建号设初始密码发给用户，用户登录后 `/account` 改密码"。少一张表，交互也更直白
+- **第一个注册的人自动 admin**：在 `databaseHooks.user.create.before` 里数 user
+  表，count === 0 时写 `role: 'admin'`，其余写 `user`；之后 worker 拦
+  `/auth/sign-up/email` 在非空时直接 403。前端也根据 `/auth-meta` 隐藏 `/signup`
+
+### 鉴权三路并存：session > per-user API key > MUIAD_API_KEY
+- **场景分离**：
+  - admin 面板走 session cookie（跨子域 `.muiad.meathill.com`、`SameSite=None; Secure`）
+  - MCP / CI / 脚本走 `Bearer muiad_...` per-user key
+  - 运维 / 救命场景走 `Bearer <MUIAD_API_KEY>` 作为根凭据兜底
+- **顺序优先 session**：admin 同时带 Bearer 根 key + cookie 时必须按 session 做
+  owner 过滤，否则 root key 一刀切就把多用户隔离废了
+- **`muiad_` 前缀命中后不 fall-through**：用户 key 过期 / 撤销时直接 401，
+  避免错位"降级"成 root key 造成权限放大
+- **API key 只存 sha256 hash + 可读 prefix**：明文原 key 只在创建接口返回一次，
+  UI 负责让用户复制走，刷新就再也拿不到了；符合最小权限 + 可撤销的 API key 常识
+
+### 跨子域 cookie
+- `admin.muiad.meathill.com` 和 `api.muiad.meathill.com` 同属 `.muiad.meathill.com`
+- better-auth 的 `advanced.defaultCookieAttributes = { sameSite: 'none', secure: true, domain: '.muiad.meathill.com' }`
+  + `crossSubDomainCookies.enabled = true`
+- 后端 CORS 必须 `credentials: true` + 回显 origin（不能用 `*`）；前端 fetch 必须
+  `credentials: 'include'`
+
+### `owner_id` 允许 NULL + 认领机制
+- **为什么 nullable**：migration 0008 执行时用户表可能还空（Phase C 迁移在 Phase B 之前
+  部署），硬写 NOT NULL 会失败；允许 NULL + 迁移里带 `UPDATE ... WHERE owner_id IS NULL`
+  的 backfill 更鲁棒
+- **NULL 数据对用户不可见**：repository 在 ownerId !== undefined 时按 eq 过滤，
+  IS NULL 不会匹配任何已登录用户；只有 root key 模式能看到孤儿数据
+- **`/api/admin/claim-orphans`**：admin 登录后一键认领，幂等（第二次调返回 0）
+- **MCP 写入仍会产生新的 NULL 数据**：MCP 当前用 root key 鉴权，没有用户上下文；
+  未来 MCP 走 per-user key 后这个问题自动消失
+
 ### Landing page 用 OpenNext 跑在 Cloudflare Workers
 - **依据**：整个产品（Worker、MCP、Admin）都在 CF，landing 不单独起 Vercel / Netlify 降低心智成本，并且能复用同一个 D1 实例收 waitlist
 - **代价**：OpenNext 对 Next.js 新版本有延迟；每次 Next 大版本升级都要检查 `@opennextjs/cloudflare` 兼容性
@@ -52,6 +93,15 @@ pnpm --filter @muiad/web build  # next build 过类型检查
 ### Wrangler 的 D1 migration 目录默认 `./migrations`
 - `apps/web/migrations/NNNN_*.sql` 是权威来源；命令 `pnpm run db:migrate:remote`
 - 如果 "No migrations to apply" 说明已经 apply 过，直接继续
+
+## Auth 调试 checklist
+
+- session 不生效 → 先查 CORS：`Access-Control-Allow-Credentials: true` + 具体 origin
+  （不是 `*`），fetch 侧 `credentials: 'include'`
+- `/auth-meta` 返回 `signupOpen: false` 但应用里没用户 → 检查是不是有残留的
+  smoke-test 用户，`SELECT * FROM user;` 看一眼
+- Bearer `muiad_...` 401 → 先确认 key 没被撤销（`revoked_at IS NULL`），
+  再 `select hash from api_keys` 和 `echo -n "$KEY" | shasum -a 256` 比对
 
 ## 待长期关注
 
