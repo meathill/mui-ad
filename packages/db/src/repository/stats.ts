@@ -21,7 +21,14 @@ export async function zoneStats(db: Db, zoneId: string): Promise<ZoneStats> {
 
 export async function recordImpression(
   db: Db,
-  data: { zoneId: string; adId: string; ipHash: string; userAgent?: string; createdAt: string },
+  data: {
+    zoneId: string;
+    adId: string;
+    ipHash: string;
+    userAgent?: string;
+    referer?: string;
+    createdAt: string;
+  },
 ): Promise<void> {
   await db.insert(impressions).values(data);
 }
@@ -34,6 +41,9 @@ export async function recordClick(
     ipHash: string;
     userAgent?: string;
     referer?: string;
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
     createdAt: string;
   },
 ): Promise<void> {

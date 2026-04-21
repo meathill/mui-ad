@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const impressions = sqliteTable('impressions', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -6,6 +6,8 @@ export const impressions = sqliteTable('impressions', {
   adId: text('ad_id').notNull(),
   ipHash: text('ip_hash').notNull(),
   userAgent: text('user_agent'),
+  /** Host page URL that rendered the widget. */
+  referer: text('referer'),
   createdAt: text('created_at')
     .notNull()
     .$defaultFn(() => new Date().toISOString()),

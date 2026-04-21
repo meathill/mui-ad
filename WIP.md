@@ -86,6 +86,17 @@
       线上全通（1 impression / 1 click / 100% CTR）
 - [x] 更新 DEPLOYMENT.md（worker 部署命令 + 资源表 + API URL）
 
+## MVP-1 归因追踪（进行中）
+
+- [x] **1a** 基础归因字段（已上线）
+      - `impressions` 加 `referer`（host 页面 URL）
+      - `clicks` 加 `utm_source / utm_medium / utm_campaign`
+      - `/serve` 记录 referer；`/track/click` 从 redirect URL 解析 UTM 持久化
+      - migration 0003 已应用到本地 + 远程 muiad D1
+- [ ] **1b** Session 化去重（cookie id 替代裸 IP hash）
+- [ ] **1c** `/track/conversion` 端点 + `conversions` 表 + MCP tool
+- [ ] **1d** Admin stats 页加"去重/原始"切换 + UTM / referer 分布
+
 ## 待定事项
 
 - Admin 是否需要登录认证（MVP-0 暂不做，依赖 Worker API Key）

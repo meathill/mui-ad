@@ -27,6 +27,7 @@ app.get('/', async (c) => {
     adId: picked.id,
     ipHash,
     userAgent: c.req.header('user-agent'),
+    referer: c.req.header('referer'),
     createdAt: new Date().toISOString(),
   });
 

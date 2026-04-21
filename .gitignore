@@ -42,3 +42,7 @@ coverage/
 .wrangler
 .next
 .open-next
+
+# Wrangler local dev secrets (per-worker) — NEVER commit
+.dev.vars
+**/.dev.vars

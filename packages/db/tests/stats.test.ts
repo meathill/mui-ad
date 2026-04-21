@@ -43,6 +43,31 @@ describe('stats repository', () => {
     expect(s.ctr).toBeCloseTo(0.3, 5);
   });
 
+  it('persists referer + UTM fields on clicks', async () => {
+    const now = new Date().toISOString();
+    await stats.recordImpression(db, {
+      zoneId: ZONE_ID,
+      adId: AD_ID,
+      ipHash: 'h',
+      referer: 'https://host.example',
+      createdAt: now,
+    });
+    await stats.recordClick(db, {
+      zoneId: ZONE_ID,
+      adId: AD_ID,
+      ipHash: 'h',
+      referer: 'https://host.example',
+      utmSource: 'twitter',
+      utmMedium: 'social',
+      utmCampaign: 'launch-mvp0',
+      createdAt: now,
+    });
+    // basic counts
+    const s = await stats.zoneStats(db, ZONE_ID);
+    expect(s.impressions).toBe(1);
+    expect(s.clicks).toBe(1);
+  });
+
   it('isolates stats per zone', async () => {
     const now = new Date().toISOString();
     await stats.recordImpression(db, {

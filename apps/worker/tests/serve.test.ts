@@ -96,6 +96,21 @@ describe('/track/click', () => {
     const res = await app.request('/track/click', {}, env);
     expect(res.status).toBe(400);
   });
+
+  it('extracts UTM params from the redirect URL', async () => {
+    const { adId, zoneId } = await seedAdInZone(env);
+    const redirect = encodeURIComponent(
+      'https://p.dev/landing?utm_source=twitter&utm_medium=social&utm_campaign=launch',
+    );
+    const click = await app.request(
+      `/track/click?ad=${adId}&zone=${zoneId}&redirect=${redirect}`,
+      { redirect: 'manual', headers: { referer: 'https://x.com/meathill/status/123' } },
+      env,
+    );
+    expect(click.status).toBe(302);
+    // The 302 target preserves the UTM params
+    expect(click.headers.get('location')).toContain('utm_source=twitter');
+  });
 });
 
 describe('/widget.js', () => {
