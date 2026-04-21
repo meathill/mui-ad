@@ -55,6 +55,17 @@ app.use('/auth/*', (c, next) =>
   })(c, next),
 );
 // 公共端点：admin UI 用它判断是否该显示 /signup
+// 与 /auth/* 不同名，所以要单独挂 CORS（不然浏览器 fetch 会被拦）
+app.use(
+  '/auth-meta',
+  cors({
+    origin: (origin) => origin ?? '',
+    allowHeaders: ['Content-Type'],
+    allowMethods: ['GET', 'OPTIONS'],
+    credentials: true,
+    maxAge: 600,
+  }),
+);
 app.get('/auth-meta', async (c) => {
   return c.json({ signupOpen: !(await hasAnyUser(c.env)) });
 });
