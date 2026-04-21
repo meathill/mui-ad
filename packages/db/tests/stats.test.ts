@@ -68,6 +68,50 @@ describe('stats repository', () => {
     expect(s.clicks).toBe(1);
   });
 
+  it('records conversion chain and aggregates by event type', async () => {
+    const now = new Date().toISOString();
+    // simulate a click first, get id
+    const click = await stats.recordClick(db, {
+      zoneId: ZONE_ID,
+      adId: AD_ID,
+      ipHash: 'h',
+      referer: 'https://example.com',
+      createdAt: now,
+    });
+    expect(click.id).toBeGreaterThan(0);
+
+    // look up click context
+    const ctx = await stats.clickContext(db, click.id);
+    expect(ctx?.adId).toBe(AD_ID);
+    expect(ctx?.zoneId).toBe(ZONE_ID);
+
+    // two purchases + one signup
+    for (const [type, value] of [
+      ['purchase', 1999],
+      ['purchase', 4999],
+      ['signup', 0],
+    ] as const) {
+      await stats.recordConversion(db, {
+        adId: AD_ID,
+        zoneId: ZONE_ID,
+        clickId: click.id,
+        eventType: type,
+        value,
+        currency: 'USD',
+        createdAt: now,
+      });
+    }
+
+    const summary = await stats.conversionsForAd(db, AD_ID);
+    expect(summary.total).toBe(3);
+    const purchase = summary.byEventType.find((b) => b.eventType === 'purchase');
+    expect(purchase?.count).toBe(2);
+    expect(purchase?.totalValue).toBe(6998);
+    const signup = summary.byEventType.find((b) => b.eventType === 'signup');
+    expect(signup?.count).toBe(1);
+    expect(signup?.totalValue).toBe(0);
+  });
+
   it('isolates stats per zone', async () => {
     const now = new Date().toISOString();
     await stats.recordImpression(db, {

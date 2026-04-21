@@ -67,13 +67,14 @@ describe('/mcp — tools/list', () => {
     env = await makeEnv();
   });
 
-  it('returns all 6 muiad_* tools', async () => {
+  it('returns all muiad_* tools', async () => {
     const res = await rpc(env, 'tools/list');
     const body = (await res.json()) as { result: { tools: Array<{ name: string }> } };
     const names = body.result.tools.map((t) => t.name).sort();
     expect(names).toEqual([
       'muiad_create_ad',
       'muiad_create_zone',
+      'muiad_get_ad_conversions',
       'muiad_get_zone_stats',
       'muiad_list_ads',
       'muiad_list_zones',

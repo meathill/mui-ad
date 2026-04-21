@@ -16,6 +16,15 @@ const app = new Hono<HonoEnv>();
 app.use('/serve/*', cors());
 app.use('/widget.js', cors());
 app.use('/files/*', cors());
+app.use(
+  '/track/*',
+  cors({
+    origin: '*',
+    allowHeaders: ['Content-Type'],
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
+    maxAge: 600,
+  }),
+);
 
 // Authed endpoints — allow any origin but require Bearer.
 // CORS must come BEFORE bearerAuth so OPTIONS preflight (no Authorization header)

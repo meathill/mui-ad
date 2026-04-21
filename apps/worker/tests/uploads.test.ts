@@ -10,7 +10,7 @@ const PNG_BYTES = new Uint8Array([
 
 function uploadForm(bytes: Uint8Array, type: string, filename = 'pic.png'): FormData {
   const form = new FormData();
-  form.append('file', new Blob([bytes as BlobPart], { type }), filename);
+  form.append('file', new Blob([bytes], { type }), filename);
   return form;
 }
 

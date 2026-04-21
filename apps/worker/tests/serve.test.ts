@@ -76,7 +76,7 @@ describe('/track/click', () => {
     env = await makeEnv();
   });
 
-  it('records a click and 302-redirects', async () => {
+  it('records a click and 302-redirects with muiad_click appended', async () => {
     const { adId, zoneId } = await seedAdInZone(env);
 
     const click = await app.request(
@@ -85,7 +85,8 @@ describe('/track/click', () => {
       env,
     );
     expect(click.status).toBe(302);
-    expect(click.headers.get('location')).toBe('https://p.dev/landing');
+    const loc = click.headers.get('location') ?? '';
+    expect(loc).toMatch(/^https:\/\/p\.dev\/landing\?muiad_click=\d+$/);
 
     const stats = await app.request(`/api/stats/zones/${zoneId}`, authed(), env);
     const s = (await stats.json()) as { clicks: number };
@@ -108,8 +109,118 @@ describe('/track/click', () => {
       env,
     );
     expect(click.status).toBe(302);
-    // The 302 target preserves the UTM params
-    expect(click.headers.get('location')).toContain('utm_source=twitter');
+    // The 302 target preserves the UTM params AND appends muiad_click
+    const loc = click.headers.get('location') ?? '';
+    expect(loc).toContain('utm_source=twitter');
+    expect(loc).toMatch(/muiad_click=\d+/);
+  });
+});
+
+describe('/track/conversion', () => {
+  let env: TestEnv;
+  beforeEach(async () => {
+    env = await makeEnv();
+  });
+
+  async function clickOnce(env: TestEnv): Promise<{ clickId: number; adId: string; zoneId: string }> {
+    const { adId, zoneId } = await seedAdInZone(env);
+    const res = await app.request(
+      `/track/click?ad=${adId}&zone=${zoneId}&redirect=${encodeURIComponent('https://p.dev/landing')}`,
+      { redirect: 'manual' },
+      env,
+    );
+    const loc = res.headers.get('location') ?? '';
+    const m = loc.match(/muiad_click=(\d+)/);
+    return { clickId: Number(m?.[1]), adId, zoneId };
+  }
+
+  it('rejects invalid JSON body', async () => {
+    const res = await app.request(
+      '/track/conversion',
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: 'not json' },
+      env,
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects missing event_type', async () => {
+    const res = await app.request(
+      '/track/conversion',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ click_id: 1 }),
+      },
+      env,
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects when neither click_id nor ad_id is provided', async () => {
+    const res = await app.request(
+      '/track/conversion',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_type: 'signup' }),
+      },
+      env,
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it('404s on unknown click_id', async () => {
+    const res = await app.request(
+      '/track/conversion',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ click_id: 99999, event_type: 'signup' }),
+      },
+      env,
+    );
+    expect(res.status).toBe(404);
+  });
+
+  it('records a conversion chained to a prior click', async () => {
+    const { clickId, adId, zoneId } = await clickOnce(env);
+
+    const res = await app.request(
+      '/track/conversion',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', referer: 'https://p.dev/thank-you' },
+        body: JSON.stringify({
+          click_id: clickId,
+          event_type: 'purchase',
+          value: 1999,
+          currency: 'USD',
+          meta: { plan: 'pro' },
+        }),
+      },
+      env,
+    );
+    expect(res.status).toBe(201);
+    const body = (await res.json()) as { ok: boolean };
+    expect(body.ok).toBe(true);
+
+    // context was inferred
+    expect(adId).toBeTruthy();
+    expect(zoneId).toBeTruthy();
+  });
+
+  it('accepts ad_id directly when click_id is not known', async () => {
+    const { adId } = await seedAdInZone(env);
+    const res = await app.request(
+      '/track/conversion',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ad_id: adId, event_type: 'signup' }),
+      },
+      env,
+    );
+    expect(res.status).toBe(201);
   });
 });
 

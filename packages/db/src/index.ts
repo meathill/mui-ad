@@ -8,4 +8,4 @@ export * as stats from './repository/stats';
 export type { NewProduct, Product } from './repository/products';
 export type { NewZone, Zone, ZoneStatus } from './repository/zones';
 export type { Ad, AdStatus, NewAd, ZoneAd } from './repository/ads';
-export type { ZoneStats } from './repository/stats';
+export type { ConversionsSummary, NewConversion, ZoneStats } from './repository/stats';

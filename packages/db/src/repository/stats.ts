@@ -1,6 +1,6 @@
-import { count, eq } from 'drizzle-orm';
+import { and, count, eq, sql } from 'drizzle-orm';
 import type { Db } from '../db';
-import { clicks, impressions } from '../schema';
+import { clicks, conversions, impressions } from '../schema';
 
 export type ZoneStats = {
   impressions: number;
@@ -46,6 +46,61 @@ export async function recordClick(
     utmCampaign?: string;
     createdAt: string;
   },
-): Promise<void> {
-  await db.insert(clicks).values(data);
+): Promise<{ id: number }> {
+  const [row] = await db.insert(clicks).values(data).returning({ id: clicks.id });
+  return row;
+}
+
+export type NewConversion = {
+  adId: string;
+  zoneId?: string;
+  clickId?: number;
+  eventType: string;
+  value?: number;
+  currency?: string;
+  ipHash?: string;
+  referer?: string;
+  meta?: string;
+  createdAt: string;
+};
+
+export async function recordConversion(db: Db, data: NewConversion): Promise<void> {
+  await db.insert(conversions).values(data);
+}
+
+export type ConversionsSummary = {
+  total: number;
+  byEventType: Array<{ eventType: string; count: number; totalValue: number }>;
+};
+
+/** Aggregate conversions for a given ad: total count + per-event-type count & value sum. */
+export async function conversionsForAd(db: Db, adId: string): Promise<ConversionsSummary> {
+  const rows = await db
+    .select({
+      eventType: conversions.eventType,
+      count: count(),
+      totalValue: sql<number>`COALESCE(SUM(${conversions.value}), 0)`.as('total_value'),
+    })
+    .from(conversions)
+    .where(eq(conversions.adId, adId))
+    .groupBy(conversions.eventType);
+  const total = rows.reduce((sum, r) => sum + Number(r.count), 0);
+  return {
+    total,
+    byEventType: rows.map((r) => ({
+      eventType: r.eventType,
+      count: Number(r.count),
+      totalValue: Number(r.totalValue ?? 0),
+    })),
+  };
+}
+
+/** Look up the ad + zone for a given click (so /track/conversion can infer zone_id). */
+export async function clickContext(db: Db, clickId: number): Promise<{ adId: string; zoneId: string } | undefined> {
+  const [row] = await db
+    .select({ adId: clicks.adId, zoneId: clicks.zoneId })
+    .from(clicks)
+    .where(eq(clicks.id, clickId))
+    .limit(1);
+  return row;
 }
