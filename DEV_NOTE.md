@@ -27,6 +27,18 @@ pnpm run format         # biome 格式化
 pnpm --filter @muiad/web build  # next build 过类型检查
 ```
 
+### `wrangler secret put` 不要用 `echo` 管道上传
+- `echo "key"` 末尾带 `\n`，wrangler 会把它当 secret 的一部分存起来
+- 结果：bearer header 要带 `\n` 才 match，正常的 `Authorization: Bearer <key>` 全部 401
+- 正确姿势：`printf '%s' "<key>" | pnpm wrangler secret put MUIAD_API_KEY`
+- 或者交互式输入（wrangler 会正确处理换行）
+
+### `.dev.vars` 必须 gitignored
+- wrangler 的 per-worker 本地开发 secret 文件，约定放在各 worker 根目录
+- 已在 `.gitignore` 加 `**/.dev.vars`
+- 历史教训：MVP-1a commit 时误带了 `apps/worker/.dev.vars`（含 API key），force-push
+  后 rotate 了 key 补救——commit 前看 `git status` 是便宜但重要的一步
+
 ### 跑 `opennextjs-cloudflare deploy` 必须设 `CLOUDFLARE_ACCOUNT_ID`
 - 否则 R2 cache populator 会弹交互式账号选择阻塞
 - 我们的账号：`fdc63eeea83ae8f5234357308b9a638b`
