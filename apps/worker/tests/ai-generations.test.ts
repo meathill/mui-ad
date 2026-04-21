@@ -9,11 +9,7 @@ async function createOne(env: TestEnv, overrides: Record<string, unknown> = {}) 
     original_key: `ai-banners/${crypto.randomUUID()}.png`,
     ...overrides,
   };
-  const res = await app.request(
-    '/api/ai-generations',
-    authed({ method: 'POST', body: JSON.stringify(body) }),
-    env,
-  );
+  const res = await app.request('/api/ai-generations', authed({ method: 'POST', body: JSON.stringify(body) }), env);
   return { status: res.status, body: (await res.json()) as { generation?: { id: number } } };
 }
 

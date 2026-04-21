@@ -150,8 +150,8 @@ export default function NewAdPage() {
           />
         </Field>
 
-        <Field label="Banner 图片" hint="可选。拖拽上传、粘贴 URL，或让 AI 基于选中的产品生成一张">
-          <UploadInput value={imageUrl} onChange={setImageUrl} aiGeneration={productId ? { productId } : undefined} />
+        <Field label="Banner 图片" hint="可选。拖拽上传或粘贴 URL（下一次迭代接回 AI 生成）">
+          <UploadInput value={imageUrl} onChange={setImageUrl} />
         </Field>
 
         <Field label="落地页 URL">

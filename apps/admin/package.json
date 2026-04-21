@@ -12,10 +12,12 @@
   },
   "dependencies": {
     "@base-ui-components/react": "1.0.0-rc.0",
+    "@google/genai": "^1.50.1",
     "@muiad/db": "workspace:*",
     "@opennextjs/cloudflare": "^1.19.1",
     "@phosphor-icons/react": "^2.1.10",
     "next": "^16.2.3",
+    "openai": "^6.34.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "tailwindcss": "^4.2.2",

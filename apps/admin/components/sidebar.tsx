@@ -1,6 +1,6 @@
 'use client';
 
-import { ChartBar, Gear, Megaphone, Package, Stack } from '@phosphor-icons/react';
+import { ChartBar, Gear, Megaphone, Package, Sparkle, SlidersHorizontal, Stack } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useConfig } from '@/lib/store';
@@ -10,6 +10,8 @@ const NAV = [
   { href: '/zones', label: '广告位', icon: Stack },
   { href: '/products', label: '产品', icon: Package },
   { href: '/ads', label: '广告', icon: Megaphone },
+  { href: '/ai-generations', label: 'AI 历史', icon: Sparkle },
+  { href: '/settings', label: '设置', icon: SlidersHorizontal },
 ];
 
 export default function Sidebar() {

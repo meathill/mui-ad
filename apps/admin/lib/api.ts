@@ -2,9 +2,11 @@
 
 import type {
   Ad,
+  AiGeneration,
   ConversionByAdRow,
   ConversionsSummary,
   NewAd,
+  NewAiGeneration,
   NewProduct,
   NewZone,
   Product,
@@ -94,13 +96,20 @@ export interface Api {
   uploads: {
     create: (file: File) => Promise<{ key: string; url: string; contentType: string; size: number }>;
   };
-  ai: {
-    generateBanner: (input: {
-      productId: string;
-      model?: string;
-      size?: string;
-      styleHint?: string;
-    }) => Promise<{ key: string; url: string; model: string; size: string; promptPreview: string }>;
+  aiGenerations: {
+    create: (input: {
+      provider: string;
+      model: string;
+      prompt: string;
+      originalKey: string;
+      croppedKey?: string;
+      width?: number;
+      height?: number;
+      productId?: string;
+      adId?: string;
+    }) => Promise<AiGeneration>;
+    list: (filter?: { productId?: string; adId?: string; limit?: number; offset?: number }) => Promise<AiGeneration[]>;
+    remove: (id: number) => Promise<void>;
   };
 }
 
@@ -193,17 +202,34 @@ export function makeApi(workerUrl: string, apiKey: string): Api {
         }>(`/api/stats/zones/${zoneId}/breakdown`),
       adConversions: (adId) => r<ConversionsSummary & { adId: string }>(`/api/stats/ads/${adId}/conversions`),
     },
-    ai: {
-      generateBanner: (input) =>
-        r<{ key: string; url: string; model: string; size: string; promptPreview: string }>('/api/ai/banner', {
-          method: 'POST',
-          body: JSON.stringify({
-            product_id: input.productId,
-            model: input.model,
-            size: input.size,
-            style_hint: input.styleHint,
-          }),
-        }),
+    aiGenerations: {
+      create: async (input) =>
+        (
+          await r<{ generation: AiGeneration }>('/api/ai-generations', {
+            method: 'POST',
+            body: JSON.stringify({
+              provider: input.provider,
+              model: input.model,
+              prompt: input.prompt,
+              original_key: input.originalKey,
+              cropped_key: input.croppedKey,
+              width: input.width,
+              height: input.height,
+              product_id: input.productId,
+              ad_id: input.adId,
+            }),
+          })
+        ).generation,
+      list: async (filter) => {
+        const params = new URLSearchParams();
+        if (filter?.productId) params.set('product_id', filter.productId);
+        if (filter?.adId) params.set('ad_id', filter.adId);
+        if (filter?.limit) params.set('limit', String(filter.limit));
+        if (filter?.offset) params.set('offset', String(filter.offset));
+        const q = params.toString();
+        return (await r<{ generations: AiGeneration[] }>(`/api/ai-generations${q ? `?${q}` : ''}`)).generations;
+      },
+      remove: (id) => r<void>(`/api/ai-generations/${id}`, { method: 'DELETE' }),
     },
     uploads: {
       create: async (file) => {
