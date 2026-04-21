@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { createAuth } from './auth';
+import { createAuth, hasAnyUser } from './auth';
 import type { HonoEnv } from './env';
 import { bearerAuth } from './middleware/auth';
 import api from './routes/api';
@@ -54,7 +54,19 @@ app.use('/auth/*', (c, next) =>
     maxAge: 600,
   })(c, next),
 );
+// 公共端点：admin UI 用它判断是否该显示 /signup
+app.get('/auth-meta', async (c) => {
+  return c.json({ signupOpen: !(await hasAnyUser(c.env)) });
+});
+
 app.on(['GET', 'POST'], '/auth/*', async (c) => {
+  // 关掉公开 sign-up：一旦有用户，新账号必须由 admin 从 /users 创建
+  const url = new URL(c.req.url);
+  if (c.req.method === 'POST' && url.pathname === '/auth/sign-up/email') {
+    if (await hasAnyUser(c.env)) {
+      return c.json({ error: 'Public signup is closed. Ask the admin to create an account for you.' }, 403);
+    }
+  }
   const auth = createAuth(c.env);
   return auth.handler(c.req.raw);
 });

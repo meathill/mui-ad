@@ -1,4 +1,5 @@
 import { createAuthClient } from 'better-auth/react';
+import { adminClient } from 'better-auth/client/plugins';
 import { DEFAULT_WORKER_URL } from '@/lib/store';
 
 /**
@@ -19,8 +20,13 @@ function resolveBaseURL(): string {
   return DEFAULT_WORKER_URL;
 }
 
+const baseURL = resolveBaseURL();
+
+export const workerBaseURL = baseURL;
+
 export const authClient = createAuthClient({
-  baseURL: `${resolveBaseURL()}/auth`,
+  baseURL: `${baseURL}/auth`,
+  plugins: [adminClient()],
   fetchOptions: {
     credentials: 'include',
   },

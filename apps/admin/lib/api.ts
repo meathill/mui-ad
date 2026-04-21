@@ -29,6 +29,7 @@ export class ApiError extends Error {
 async function request<T>(workerUrl: string, apiKey: string, path: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(`${workerUrl}${path}`, {
     ...init,
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
@@ -237,6 +238,7 @@ export function makeApi(workerUrl: string, apiKey: string): Api {
         form.append('file', file);
         const res = await fetch(`${workerUrl}/uploads`, {
           method: 'POST',
+          credentials: 'include',
           headers: { Authorization: `Bearer ${apiKey}` },
           body: form,
         });

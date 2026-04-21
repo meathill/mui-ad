@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { authClient } from '@/lib/auth-client';
+import { useEffect, useState } from 'react';
+import { authClient, workerBaseURL } from '@/lib/auth-client';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -12,6 +12,19 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [gateState, setGateState] = useState<'loading' | 'open' | 'closed'>('loading');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${workerBaseURL}/auth-meta`, { credentials: 'include' });
+        const json = (await res.json()) as { signupOpen: boolean };
+        setGateState(json.signupOpen ? 'open' : 'closed');
+      } catch {
+        setGateState('closed');
+      }
+    })();
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,14 +39,43 @@ export default function SignupPage() {
     router.replace('/');
   }
 
+  if (gateState === 'loading') {
+    return (
+      <div className="mx-auto flex min-h-screen max-w-xl items-center justify-center font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">
+        加载中…
+      </div>
+    );
+  }
+
+  if (gateState === 'closed') {
+    return (
+      <div className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-6 py-16">
+        <p className="mb-6 font-mono text-[11px] uppercase tracking-[0.24em] text-ember-deep">MuiAD // signup closed</p>
+        <h1 className="font-serif text-5xl leading-[1.05] tracking-tight">
+          这个节点不<em className="italic text-ember-deep">开放注册</em>。
+        </h1>
+        <p className="mt-5 text-ink-soft">账号由节点管理员创建后发给你，拿到凭据后直接登录，进去先改密码。</p>
+        <div className="mt-10">
+          <Link
+            href="/login"
+            className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 font-mono text-[12px] uppercase tracking-[0.18em] text-paper transition-colors hover:bg-ember-deep"
+          >
+            去登录 →
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-6 py-16">
-      <p className="mb-6 font-mono text-[11px] uppercase tracking-[0.24em] text-ember-deep">MuiAD // signup</p>
+      <p className="mb-6 font-mono text-[11px] uppercase tracking-[0.24em] text-ember-deep">MuiAD // bootstrap</p>
       <h1 className="font-serif text-5xl leading-[1.05] tracking-tight">
-        创建你的<em className="italic text-ember-deep">节点账号</em>。
+        初始化<em className="italic text-ember-deep">节点所有者</em>。
       </h1>
       <p className="mt-5 text-ink-soft">
-        第一个注册的人是节点所有者。之后新账号需要邀请码（邀请体系见 /invites，下个阶段开放）。
+        这是节点的第一个账号，自动成为 admin。之后新用户只能由你在 <code className="font-mono text-[13px]">/users</code>{' '}
+        手动创建。
       </p>
 
       <form onSubmit={handleSubmit} className="mt-10 space-y-6">
@@ -84,21 +126,13 @@ export default function SignupPage() {
 
         {error && <p className="rounded-md bg-ember/10 px-4 py-3 font-mono text-xs text-ember-deep">{error}</p>}
 
-        <div className="flex items-center gap-4">
-          <button
-            type="submit"
-            disabled={submitting || !email || !password || !name}
-            className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 font-mono text-[12px] uppercase tracking-[0.18em] text-paper transition-colors hover:bg-ember-deep disabled:opacity-60"
-          >
-            {submitting ? '正在注册…' : '创建账号'}
-          </button>
-          <Link
-            href="/login"
-            className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-soft hover:text-ember-deep"
-          >
-            已有账号？登录 →
-          </Link>
-        </div>
+        <button
+          type="submit"
+          disabled={submitting || !email || !password || !name}
+          className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 font-mono text-[12px] uppercase tracking-[0.18em] text-paper transition-colors hover:bg-ember-deep disabled:opacity-60"
+        >
+          {submitting ? '正在创建…' : '创建 admin 账号'}
+        </button>
       </form>
     </div>
   );
