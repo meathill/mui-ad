@@ -94,6 +94,14 @@ export interface Api {
   uploads: {
     create: (file: File) => Promise<{ key: string; url: string; contentType: string; size: number }>;
   };
+  ai: {
+    generateBanner: (input: {
+      productId: string;
+      model?: string;
+      size?: string;
+      styleHint?: string;
+    }) => Promise<{ key: string; url: string; model: string; size: string; promptPreview: string }>;
+  };
 }
 
 export function makeApi(workerUrl: string, apiKey: string): Api {
@@ -184,6 +192,18 @@ export function makeApi(workerUrl: string, apiKey: string): Api {
           conversions: ConversionByAdRow[];
         }>(`/api/stats/zones/${zoneId}/breakdown`),
       adConversions: (adId) => r<ConversionsSummary & { adId: string }>(`/api/stats/ads/${adId}/conversions`),
+    },
+    ai: {
+      generateBanner: (input) =>
+        r<{ key: string; url: string; model: string; size: string; promptPreview: string }>('/api/ai/banner', {
+          method: 'POST',
+          body: JSON.stringify({
+            product_id: input.productId,
+            model: input.model,
+            size: input.size,
+            style_hint: input.styleHint,
+          }),
+        }),
     },
     uploads: {
       create: async (file) => {

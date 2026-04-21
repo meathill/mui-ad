@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { Product, Zone } from '@muiad/db';
 import { Field, inputClass, inputMonoClass } from '@/components/ui/field';
+import { UploadInput } from '@/components/ui/upload-input';
 import { apiFromConfig } from '@/lib/api';
 import { useConfig } from '@/lib/store';
 
@@ -149,14 +150,8 @@ export default function NewAdPage() {
           />
         </Field>
 
-        <Field label="Banner 图片 URL" hint="可选">
-          <input
-            type="url"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://…"
-            className={inputMonoClass}
-          />
+        <Field label="Banner 图片" hint="可选。拖拽上传、粘贴 URL，或让 AI 基于选中的产品生成一张">
+          <UploadInput value={imageUrl} onChange={setImageUrl} aiGeneration={productId ? { productId } : undefined} />
         </Field>
 
         <Field label="落地页 URL">

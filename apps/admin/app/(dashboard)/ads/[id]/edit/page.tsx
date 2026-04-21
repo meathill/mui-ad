@@ -146,8 +146,12 @@ export default function EditAdPage() {
           />
         </Field>
 
-        <Field label="Banner 图片" hint="拖拽或点击替换上传到 R2">
-          <UploadInput value={imageUrl} onChange={setImageUrl} />
+        <Field label="Banner 图片" hint="拖拽、粘贴 URL，或让 AI 基于当前产品重新生成">
+          <UploadInput
+            value={imageUrl}
+            onChange={setImageUrl}
+            aiGeneration={ad ? { productId: ad.productId } : undefined}
+          />
         </Field>
 
         <Field label="落地页 URL">

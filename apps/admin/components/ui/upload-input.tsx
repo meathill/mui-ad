@@ -1,6 +1,6 @@
 'use client';
 
-import { CloudArrowUp, X } from '@phosphor-icons/react';
+import { CloudArrowUp, Sparkle, X } from '@phosphor-icons/react';
 import { type DragEvent, useRef, useState } from 'react';
 import { apiFromConfig } from '@/lib/api';
 import { useConfig } from '@/lib/store';
@@ -12,6 +12,8 @@ interface UploadInputProps {
   maxBytes?: number;
   /** Show a text field next to the uploader for users who prefer pasting a URL. */
   allowUrlInput?: boolean;
+  /** If provided, renders an "AI 生成" button that calls /api/ai/banner with these params. */
+  aiGeneration?: { productId: string; styleHint?: string };
 }
 
 const DEFAULT_MAX = 5 * 1024 * 1024;
@@ -22,13 +24,34 @@ export function UploadInput({
   accept = 'image/*',
   maxBytes = DEFAULT_MAX,
   allowUrlInput = true,
+  aiGeneration,
 }: UploadInputProps) {
   const workerUrl = useConfig((s) => s.workerUrl);
   const apiKey = useConfig((s) => s.apiKey);
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
+
+  async function generate() {
+    if (!aiGeneration) return;
+    const api = apiFromConfig(workerUrl, apiKey);
+    if (!api) return;
+    setError('');
+    setGenerating(true);
+    try {
+      const res = await api.ai.generateBanner({
+        productId: aiGeneration.productId,
+        styleHint: aiGeneration.styleHint,
+      });
+      onChange(res.url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setGenerating(false);
+    }
+  }
 
   async function upload(file: File) {
     setError('');
@@ -83,6 +106,18 @@ export function UploadInput({
 
   return (
     <div className="space-y-3">
+      {aiGeneration && (
+        <button
+          type="button"
+          onClick={generate}
+          disabled={generating || uploading}
+          className="inline-flex items-center gap-1.5 rounded-full border border-ember/50 bg-ember/5 px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-ember-deep transition-colors hover:bg-ember/15 disabled:opacity-60"
+        >
+          <Sparkle size={12} weight="fill" />
+          {generating ? 'AI 生成中…（10–30 秒）' : '✨ 让 AI 生成 banner'}
+        </button>
+      )}
+
       {value ? (
         <div className="flex items-start gap-4 rounded-xl border border-rule/60 bg-paper-deep/30 p-3">
           {/* biome-ignore lint/performance/noImgElement: raw img intentional for preview */}
