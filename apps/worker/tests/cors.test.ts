@@ -21,7 +21,7 @@ describe('CORS on authed endpoints', () => {
       env,
     );
     expect(res.status).toBe(204);
-    expect(res.headers.get('access-control-allow-origin')).toBe('*');
+    expect(res.headers.get('access-control-allow-origin')).toBe('https://muiad-admin.meathill.workers.dev');
     const allowHeaders = res.headers.get('access-control-allow-headers') ?? '';
     expect(allowHeaders.toLowerCase()).toContain('authorization');
     const allowMethods = res.headers.get('access-control-allow-methods') ?? '';
@@ -43,7 +43,7 @@ describe('CORS on authed endpoints', () => {
       env,
     );
     expect(res.status).toBe(204);
-    expect(res.headers.get('access-control-allow-origin')).toBe('*');
+    expect(res.headers.get('access-control-allow-origin')).toBe('https://muiad-admin.meathill.workers.dev');
   });
 
   it('actual GET /api/zones with bearer carries CORS headers', async () => {
@@ -58,6 +58,6 @@ describe('CORS on authed endpoints', () => {
       env,
     );
     expect(res.status).toBe(200);
-    expect(res.headers.get('access-control-allow-origin')).toBe('*');
+    expect(res.headers.get('access-control-allow-origin')).toBe('https://muiad-admin.meathill.workers.dev');
   });
 });

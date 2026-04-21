@@ -7,3 +7,4 @@ export * from './impressions';
 export * from './clicks';
 export * from './conversions';
 export * from './ai-generations';
+export * from './auth';

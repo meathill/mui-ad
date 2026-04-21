@@ -15,6 +15,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@muiad/db": "workspace:*",
+    "better-auth": "^1.6.5",
     "hono": "^4.12.12"
   },
   "devDependencies": {
