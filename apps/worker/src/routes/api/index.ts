@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { HonoEnv } from '../../env';
 import ads from './ads';
-import ai from './ai';
+import aiGenerations from './ai-generations';
 import products from './products';
 import stats from './stats';
 import zones from './zones';
@@ -11,6 +11,6 @@ api.route('/products', products);
 api.route('/zones', zones);
 api.route('/ads', ads);
 api.route('/stats', stats);
-api.route('/ai', ai);
+api.route('/ai-generations', aiGenerations);
 
 export default api;
