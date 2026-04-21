@@ -136,6 +136,45 @@ describe('/api/ads', () => {
     expect(res.status).toBe(201);
   });
 
+  it('GET /api/stats/zones/:id/breakdown returns aggregates', async () => {
+    const productId = await createProduct();
+    const zoneId = await createZone();
+    const adRes = await app.request(
+      '/api/ads',
+      authed({
+        method: 'POST',
+        body: JSON.stringify({ productId, title: 't', linkUrl: 'https://p.dev', zoneIds: [zoneId] }),
+      }),
+      env,
+    );
+    const ad = (await adRes.json()) as { ad: { id: string } };
+
+    // Fire 2 clicks with UTM via public /track/click
+    for (let i = 0; i < 2; i++) {
+      await app.request(
+        `/track/click?ad=${ad.ad.id}&zone=${zoneId}&redirect=${encodeURIComponent(
+          'https://p.dev/l?utm_source=twitter',
+        )}`,
+        { redirect: 'manual', headers: { referer: `https://host${i}.example/` } },
+        env,
+      );
+    }
+
+    const res = await app.request(`/api/stats/zones/${zoneId}/breakdown`, authed(), env);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      zoneId: string;
+      totals: { clicks: number };
+      utmSources: Array<{ source: string | null; count: number }>;
+      referers: Array<{ referer: string | null; count: number }>;
+      conversions: Array<{ adId: string; count: number }>;
+    };
+    expect(body.totals.clicks).toBe(2);
+    const twitter = body.utmSources.find((u) => u.source === 'twitter');
+    expect(twitter?.count).toBe(2);
+    expect(body.referers.length).toBeGreaterThan(0);
+  });
+
   it('GET /:id/zones returns the attached zones', async () => {
     const productId = await createProduct();
     const zoneId = await createZone();

@@ -117,7 +117,9 @@ export default function ZonesPage() {
                     <StatusPill status={z.status} />
                   </td>
                   <td className="px-5 py-4">
-                    <StatsCell s={stats[z.id]} />
+                    <Link href={`/zones/${z.id}/stats`} className="block rounded-md px-1 py-0.5 hover:bg-rule/30">
+                      <StatsCell s={stats[z.id]} />
+                    </Link>
                   </td>
                   <td className="px-5 py-4">
                     <div className="flex items-center justify-end gap-1">

@@ -100,7 +100,13 @@
       - click_id 提供时自动 infer ad/zone；value 以整型最小单位存
       - MCP 新 tool `muiad_get_ad_conversions`，按事件类型聚合 count + value
       - worker 42 测试全绿；线上验证链路通
-- [ ] **1d** Admin stats 页加"去重/原始"切换 + UTM / referer 分布
+- [x] **1d** Admin 归因可视化（去重切换推到 1b 完成后做）
+      - 新 repo 查询：utmSourcesForZone / topReferersForZone / conversionsByAdInZone
+      - worker 新端点 `GET /api/stats/zones/:id/breakdown` + `GET /api/stats/ads/:id/conversions`
+      - admin 新页 `/zones/[id]/stats`：大号卡片展示 展示/点击/CTR，UTM 来源带进度条，
+        referer 列表，转化按广告聚合
+      - zones 列表的"数据"列整块变 link 点进去
+      - 线上 landing zone 实时数据：27 展示 / 5 点击 / 18.5% CTR / 1 signup
 
 ## 待定事项
 

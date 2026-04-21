@@ -112,6 +112,70 @@ describe('stats repository', () => {
     expect(signup?.totalValue).toBe(0);
   });
 
+  it('aggregates utm sources + top referers + conversions per ad', async () => {
+    const now = new Date().toISOString();
+    // Mix of utm sources and referers
+    await stats.recordClick(db, {
+      zoneId: ZONE_ID,
+      adId: AD_ID,
+      ipHash: 'a',
+      referer: 'https://x.com/meathill/status/1',
+      utmSource: 'twitter',
+      utmMedium: 'social',
+      createdAt: now,
+    });
+    await stats.recordClick(db, {
+      zoneId: ZONE_ID,
+      adId: AD_ID,
+      ipHash: 'b',
+      referer: 'https://x.com/meathill/status/2',
+      utmSource: 'twitter',
+      createdAt: now,
+    });
+    await stats.recordClick(db, {
+      zoneId: ZONE_ID,
+      adId: AD_ID,
+      ipHash: 'c',
+      referer: 'https://news.ycombinator.com/item?id=123',
+      utmSource: 'hn',
+      createdAt: now,
+    });
+    await stats.recordClick(db, {
+      zoneId: ZONE_ID,
+      adId: AD_ID,
+      ipHash: 'd',
+      referer: null as unknown as undefined,
+      createdAt: now,
+    });
+
+    const utm = await stats.utmSourcesForZone(db, ZONE_ID);
+    const twitter = utm.find((r) => r.source === 'twitter');
+    const hn = utm.find((r) => r.source === 'hn');
+    const direct = utm.find((r) => r.source === null);
+    expect(twitter?.count).toBe(2);
+    expect(hn?.count).toBe(1);
+    expect(direct?.count).toBe(1);
+
+    const refs = await stats.topReferersForZone(db, ZONE_ID);
+    // 4 distinct referer values (including null)
+    expect(refs.length).toBeGreaterThanOrEqual(3);
+    // sorted desc: all count=1 so ties are fine, just assert total sums
+    expect(refs.reduce((s, r) => s + r.count, 0)).toBe(4);
+
+    // Seed a conversion to check aggregation
+    await stats.recordConversion(db, {
+      adId: AD_ID,
+      zoneId: ZONE_ID,
+      eventType: 'signup',
+      value: 0,
+      createdAt: now,
+    });
+    const conv = await stats.conversionsByAdInZone(db, ZONE_ID);
+    expect(conv).toHaveLength(1);
+    expect(conv[0]?.adId).toBe(AD_ID);
+    expect(conv[0]?.count).toBe(1);
+  });
+
   it('isolates stats per zone', async () => {
     const now = new Date().toISOString();
     await stats.recordImpression(db, {

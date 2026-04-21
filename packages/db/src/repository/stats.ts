@@ -95,6 +95,54 @@ export async function conversionsForAd(db: Db, adId: string): Promise<Conversion
   };
 }
 
+export type UtmSourceRow = { source: string | null; count: number };
+export type RefererRow = { referer: string | null; count: number };
+export type ConversionByAdRow = {
+  adId: string;
+  count: number;
+  totalValue: number;
+};
+
+/** Clicks on a zone grouped by utm_source. Null source = direct / untagged. */
+export async function utmSourcesForZone(db: Db, zoneId: string): Promise<UtmSourceRow[]> {
+  const rows = await db
+    .select({ source: clicks.utmSource, count: count() })
+    .from(clicks)
+    .where(eq(clicks.zoneId, zoneId))
+    .groupBy(clicks.utmSource);
+  return rows.map((r) => ({ source: r.source, count: Number(r.count) }));
+}
+
+/** Top `limit` referers (host-page URLs) of clicks on a zone. */
+export async function topReferersForZone(db: Db, zoneId: string, limit = 10): Promise<RefererRow[]> {
+  const rows = await db
+    .select({ referer: clicks.referer, count: count() })
+    .from(clicks)
+    .where(eq(clicks.zoneId, zoneId))
+    .groupBy(clicks.referer)
+    .orderBy(sql`count(*) desc`)
+    .limit(limit);
+  return rows.map((r) => ({ referer: r.referer, count: Number(r.count) }));
+}
+
+/** Conversions grouped by ad for a given zone. */
+export async function conversionsByAdInZone(db: Db, zoneId: string): Promise<ConversionByAdRow[]> {
+  const rows = await db
+    .select({
+      adId: conversions.adId,
+      count: count(),
+      totalValue: sql<number>`COALESCE(SUM(${conversions.value}), 0)`.as('total_value'),
+    })
+    .from(conversions)
+    .where(eq(conversions.zoneId, zoneId))
+    .groupBy(conversions.adId);
+  return rows.map((r) => ({
+    adId: r.adId,
+    count: Number(r.count),
+    totalValue: Number(r.totalValue ?? 0),
+  }));
+}
+
 /** Look up the ad + zone for a given click (so /track/conversion can infer zone_id). */
 export async function clickContext(db: Db, clickId: number): Promise<{ adId: string; zoneId: string } | undefined> {
   const [row] = await db

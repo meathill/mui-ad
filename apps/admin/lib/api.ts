@@ -1,6 +1,19 @@
 'use client';
 
-import type { Ad, NewAd, NewProduct, NewZone, Product, Zone, ZoneStats, ZoneStatus } from '@muiad/db';
+import type {
+  Ad,
+  ConversionByAdRow,
+  ConversionsSummary,
+  NewAd,
+  NewProduct,
+  NewZone,
+  Product,
+  RefererRow,
+  UtmSourceRow,
+  Zone,
+  ZoneStats,
+  ZoneStatus,
+} from '@muiad/db';
 
 export class ApiError extends Error {
   constructor(
@@ -69,6 +82,14 @@ export interface Api {
   };
   stats: {
     zone: (zoneId: string) => Promise<ZoneStats & { zoneId: string }>;
+    zoneBreakdown: (zoneId: string) => Promise<{
+      zoneId: string;
+      totals: ZoneStats;
+      utmSources: UtmSourceRow[];
+      referers: RefererRow[];
+      conversions: ConversionByAdRow[];
+    }>;
+    adConversions: (adId: string) => Promise<ConversionsSummary & { adId: string }>;
   };
   uploads: {
     create: (file: File) => Promise<{ key: string; url: string; contentType: string; size: number }>;
@@ -154,6 +175,15 @@ export function makeApi(workerUrl: string, apiKey: string): Api {
     },
     stats: {
       zone: (zoneId) => r<ZoneStats & { zoneId: string }>(`/api/stats/zones/${zoneId}`),
+      zoneBreakdown: (zoneId) =>
+        r<{
+          zoneId: string;
+          totals: ZoneStats;
+          utmSources: UtmSourceRow[];
+          referers: RefererRow[];
+          conversions: ConversionByAdRow[];
+        }>(`/api/stats/zones/${zoneId}/breakdown`),
+      adConversions: (adId) => r<ConversionsSummary & { adId: string }>(`/api/stats/ads/${adId}/conversions`),
     },
     uploads: {
       create: async (file) => {
