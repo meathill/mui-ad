@@ -20,15 +20,9 @@
 ### P0-0: 确定技术规格
 - [x] 编写 TECH_SPEC.md，约束 MVP-0 的开发
 
-### P0-1: Monorepo 初始化
-- [ ] 初始化 pnpm workspace
-- [ ] 创建 `packages/db`（Drizzle ORM + D1 迁移）
-- [ ] 创建 `apps/worker`（Hono + Vite + wrangler）
-- [ ] 创建 `apps/admin`（Next.js 16.2 + OpenNext）
-- [ ] 创建 `apps/web`（Next.js 16.2 Landing Page）
-- [ ] 配置 biome（格式化 + lint）
-- [ ] 配置 vitest
-- [ ] 配置 tsconfig（strict mode，workspace 引用）
+### P0-1: Monorepo 初始化 ✅
+- [x] pnpm workspace + packages/db + apps/{worker,admin,web}
+- [x] biome / vitest / tsconfig strict 全配齐
 
 ### P0-2: 数据库层（packages/db）✅
 - [x] 定义 Drizzle schema（products、zones、ads、zone_ads、impressions、clicks + waitlist）
@@ -59,12 +53,11 @@
 - [x] 8 个 MCP 测试（transport + tools/list + 端到端 tool chain），加上原有 17
   个，worker 25 测试全绿
 
-### P0-5: 前端 Widget（apps/worker）
-- [ ] 广告渲染脚本 widget.js
-- [ ] 支持多种广告位尺寸
-- [ ] 异步加载，不阻塞页面
+### P0-5: 前端 Widget（apps/worker）✅
+- [x] `/widget.js` 内联返回（见 P0-3），异步加载、不阻塞页面
+- [x] 尺寸由 zone 决定，widget 按 zone 数据渲染
 
-### P0-6: Admin Panel（apps/admin）
+### P0-6: Admin Panel（apps/admin）✅
 - [x] Next.js 16 + OpenNext 对齐 apps/web 的 Tailwind v4 + editorial 风格
   （放弃 Coss UI 方案，UI 组件自建基于 Base UI，保品牌一致）
 - [x] Worker API 客户端 `lib/api.ts`（Bearer、统一错误、typed via `@muiad/db`）
@@ -75,13 +68,12 @@
 - [x] 产品管理页面（列表 / 登记 / 编辑 / 删除）
 - [x] 广告管理页面（列表 / 创建含产品选择 + 广告位多选 / 编辑含
       暂停/启用 + zone 差分挂/卸 / 删除确认）
-- [ ] 数据统计页面（阶段 3，考虑进 zone 详情或单独页）
-- [x] 部署到 CF Workers：https://muiad-admin.meathill.workers.dev
-- [ ] 绑 admin.muiad.meathill.com 自定义域名（可选）
+- [x] 数据统计页面（`/zones/[id]/stats`，MVP-1d 做完）
+- [x] 部署到 CF Workers：https://admin.muiad.meathill.com（自定义域名已绑）
 
 ### P0-7: 部署与验证
 - [x] 部署 Worker 到 CF Workers（`muiad-api` → `api.muiad.meathill.com`）
-- [ ] 部署 Admin 到 CF Workers（OpenNext）——P0-6 做完再上
+- [x] 部署 Admin 到 CF Workers（OpenNext）→ admin.muiad.meathill.com
 - [x] 端到端测试：MCP register/create_zone/create_ad → /serve → /track/click → stats
       线上全通（1 impression / 1 click / 100% CTR）
 - [x] 更新 DEPLOYMENT.md（worker 部署命令 + 资源表 + API URL）

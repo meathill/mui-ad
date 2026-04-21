@@ -2,6 +2,7 @@ import type { MiddlewareHandler } from 'hono';
 import { apiKeys, createDb } from '@muiad/db';
 import { createAuth } from '../auth';
 import type { HonoEnv } from '../env';
+import { sha256Hex } from '../lib/hash';
 
 /**
  * 鉴权优先级：
@@ -65,11 +66,3 @@ export const bearerAuth: MiddlewareHandler<HonoEnv> = async (c, next) => {
 
   return c.json({ error: 'Unauthorized' }, 401);
 };
-
-async function sha256Hex(input: string): Promise<string> {
-  const bytes = new TextEncoder().encode(input);
-  const digest = await crypto.subtle.digest('SHA-256', bytes);
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}

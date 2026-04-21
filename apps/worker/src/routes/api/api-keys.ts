@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { apiKeys, createDb } from '@muiad/db';
 import type { HonoEnv } from '../../env';
+import { sha256Hex } from '../../lib/hash';
 
 const app = new Hono<HonoEnv>();
 
@@ -48,13 +49,6 @@ app.delete('/:id', async (c) => {
   await apiKeys.revoke(db, c.req.param('id'), user.id);
   return c.body(null, 204);
 });
-
-async function sha256Hex(input: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(input));
-  return Array.from(new Uint8Array(digest))
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
 
 function base64url(bytes: Uint8Array): string {
   let s = '';

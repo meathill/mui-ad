@@ -14,7 +14,7 @@ describe('stats repository', () => {
 
   it('empty zone returns zeros', async () => {
     const s = await stats.zoneStats(db, ZONE_ID);
-    expect(s).toEqual({ impressions: 0, clicks: 0, ctr: 0 });
+    expect(s).toEqual({ impressions: 0, clicks: 0, ctr: 0, uniqueViewers: 0, uniqueClickers: 0 });
   });
 
   it('records impressions and clicks, computes ctr', async () => {

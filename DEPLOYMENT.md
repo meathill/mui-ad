@@ -194,8 +194,8 @@ claude mcp add --transport http muiad https://api.muiad.meathill.com/mcp \
 
 GUI 的 "Connectors" 面板只能走 OAuth 流，我们的 MCP Server 用静态 Bearer，所以不要在那里加——走 CLI 或直接改配置。
 
-提示：MCP 当前还没做 per-user 归属（用 `muiad_...` 虽然能跑，但创建的数据
-`owner_id` 仍是 NULL；这是 WIP.md 里留的坑，下次迭代处理）。
+MCP 已支持 per-user 归属（Phase E）：用 `muiad_...` per-user key 调 MCP，
+创建的数据 `owner_id` 会挂到对应用户；读操作也按 owner 过滤。root key 依旧跨用户。
 
 ### Claude Desktop
 

@@ -53,6 +53,29 @@
 - **原因**：`phosphor-react@1.x` 在 React 19 + RSC 下会抛 `createContext is not a function`（老包是 UMD/CJS，模块顶层调 `React.createContext`，RSC 打包器不吃）
 - **结论**：项目内一律用 `@phosphor-icons/react`；layout 这种服务端组件从 `@phosphor-icons/react/dist/ssr` 导入 SSR 版本
 
+### AI banner 生成走 BYOK + 浏览器直连，不经服务端
+- **决策**：admin `/settings` 存用户自己的 OpenAI / Google API key（localStorage），
+  生成 banner 时浏览器直接调 provider。worker 只落库 `ai_generations`，不持有 LLM key
+- **为什么**：LLM 费用不兜底，用户用自己的 quota 最直接；worker 也不用扛费用监控和
+  滥用防护。DEV 历史上曾让 worker 调 OpenAI，后来完整拆掉（`9a5c154` 架构改造 step 1）
+- **扩展 provider 模式**：`apps/admin/lib/providers/{openai,google,...}.ts` 实现
+  `ImageProvider` 接口；新 provider 只需加一个文件 + 注册进 `index.ts`
+
+### 归因链：impression → click → conversion 用 sid cookie 串起来
+- **`muiad_sid`** cookie（`/serve` 首次访问下发，HttpOnly/Secure/SameSite=None、30 天）
+  是 embed 场景唯一能跨第三方 iframe 持久化的身份；配合 `COUNT(DISTINCT session_id)`
+  算 uniqueViewers / uniqueClickers
+- **`muiad_click=<id>`**：`/track/click` 302 时 append 到 redirect URL 的 query，
+  让 advertiser 的落地页 JS 能把这个 ID 回传给 `/track/conversion`；server 侧看到
+  click_id 就能自动 infer ad/zone
+- **conversion `value` 用整型最小单位**（cents / 分），不存浮点，避免币种汇总时精度漂
+
+### 共享 DB 包走 workspace 协议 `@muiad/db`
+- `packages/db` 由 worker / admin 两个 app 共用；schema / repository / migration 都
+  在这里，app 通过 `"@muiad/db": "workspace:*"` 引用，不要复制粘贴
+- **migration 的权威目录是 `packages/db/src/migrations`**；wrangler.jsonc 的
+  `migrations_dir` 全部指向这里，不要在 app 里另建 migrations 目录
+
 ### Tailwind v4 必须显式装 PostCSS 插件
 - **坑**：v4 不再随 `tailwindcss` 默认自动注入 PostCSS 流程
 - **配置**：`pnpm add -D @tailwindcss/postcss` + 一个 `postcss.config.mjs`（见 `apps/web/postcss.config.mjs`）
