@@ -68,6 +68,41 @@ describe('/serve', () => {
     expect(s.impressions).toBe(1);
     expect(s.clicks).toBe(0);
   });
+
+  it('sets muiad_sid cookie on first /serve and reuses it on next request', async () => {
+    const { zoneId } = await seedAdInZone(env);
+
+    const r1 = await app.request(`/serve?zone=${zoneId}`, {}, env);
+    const setCookie = r1.headers.get('set-cookie') ?? '';
+    expect(setCookie).toMatch(/muiad_sid=[\w-]+/);
+    expect(setCookie).toContain('SameSite=None');
+    expect(setCookie).toContain('Secure');
+    expect(setCookie).toContain('HttpOnly');
+
+    // 第二次带上同一 cookie，不应再 set-cookie
+    const sid = /muiad_sid=([^;]+)/.exec(setCookie)?.[1] ?? '';
+    const r2 = await app.request(`/serve?zone=${zoneId}`, { headers: { cookie: `muiad_sid=${sid}` } }, env);
+    expect(r2.headers.get('set-cookie')).toBeNull();
+
+    // 两次请求 → 2 impressions，1 unique viewer
+    const stats = await app.request(`/api/stats/zones/${zoneId}`, authed(), env);
+    const s = (await stats.json()) as { impressions: number; uniqueViewers: number };
+    expect(s.impressions).toBe(2);
+    expect(s.uniqueViewers).toBe(1);
+  });
+
+  it('distinct sessions → distinct uniqueViewers', async () => {
+    const { zoneId } = await seedAdInZone(env);
+
+    // 两个不同访客各请求一次
+    await app.request(`/serve?zone=${zoneId}`, { headers: { cookie: 'muiad_sid=alice-sid' } }, env);
+    await app.request(`/serve?zone=${zoneId}`, { headers: { cookie: 'muiad_sid=bob-sid' } }, env);
+
+    const stats = await app.request(`/api/stats/zones/${zoneId}`, authed(), env);
+    const s = (await stats.json()) as { impressions: number; uniqueViewers: number };
+    expect(s.impressions).toBe(2);
+    expect(s.uniqueViewers).toBe(2);
+  });
 });
 
 describe('/track/click', () => {

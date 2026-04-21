@@ -8,6 +8,8 @@ export const impressions = sqliteTable('impressions', {
   userAgent: text('user_agent'),
   /** Host page URL that rendered the widget. */
   referer: text('referer'),
+  /** 来自 muiad_sid cookie，用于独立访客去重；老数据为 NULL */
+  sessionId: text('session_id'),
   createdAt: text('created_at')
     .notNull()
     .$defaultFn(() => new Date().toISOString()),

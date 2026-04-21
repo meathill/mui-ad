@@ -2,6 +2,7 @@ import { ads, createDb, stats } from '@muiad/db';
 import { Hono } from 'hono';
 import type { HonoEnv } from '../env';
 import { clientIp, sha256Hex } from '../lib/hash';
+import { ensureSessionId } from '../lib/session';
 import { pickWeighted } from '../modules/ad-server/pick';
 
 const app = new Hono<HonoEnv>();
@@ -22,12 +23,14 @@ app.get('/', async (c) => {
   if (!picked) return c.body(null, 204);
 
   const ipHash = await sha256Hex(clientIp(c.req));
+  const sessionId = ensureSessionId(c);
   await stats.recordImpression(db, {
     zoneId,
     adId: picked.id,
     ipHash,
     userAgent: c.req.header('user-agent'),
     referer: c.req.header('referer'),
+    sessionId,
     createdAt: new Date().toISOString(),
   });
 

@@ -93,7 +93,14 @@
       - `clicks` 加 `utm_source / utm_medium / utm_campaign`
       - `/serve` 记录 referer；`/track/click` 从 redirect URL 解析 UTM 持久化
       - migration 0003 已应用到本地 + 远程 muiad D1
-- [ ] **1b** Session 化去重（cookie id 替代裸 IP hash）
+- [x] **1b** Session 化去重（`muiad_sid` cookie；stats 同时返回 impressions/clicks
+      总量和 `uniqueViewers / uniqueClickers`）
+      - migration 0010 给 impressions / clicks / conversions 加 `session_id`
+      - `/serve` 首次访问下发 cookie（30 天、`HttpOnly; Secure; SameSite=None`），
+        跨 iframe / 嵌入场景可用；`/track/click` 兜底种 cookie
+      - `zoneStats` 用 `COUNT(DISTINCT session_id)` 算独立数；admin 统计页大号卡片
+        下方显示"N 独立"；MCP `get_zone_stats` 文本同步带出
+      - worker 新增 2 个 cookie 行为测试，共 52 个全绿
 - [x] **1c** `/track/conversion` 端点 + `conversions` 表 + MCP tool
       - `/track/click` redirect 时 append `?muiad_click=<id>`，形成 click → conversion 回链
       - POST `/track/conversion` 公开（CORS）接受 `{click_id | ad_id, event_type, value?, currency?, meta?}`

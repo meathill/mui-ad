@@ -1,22 +1,46 @@
-import { and, count, eq, sql } from 'drizzle-orm';
+import { and, count, countDistinct, eq, sql } from 'drizzle-orm';
 import type { Db } from '../db';
 import { clicks, conversions, impressions } from '../schema';
 
 export type ZoneStats = {
+  /** 总展示量（不去重） */
   impressions: number;
+  /** 总点击量（不去重） */
   clicks: number;
   ctr: number;
+  /** 独立访客（distinct session_id）；历史 NULL session 不计入 */
+  uniqueViewers: number;
+  /** 独立点击者 */
+  uniqueClickers: number;
 };
 
 export async function zoneStats(db: Db, zoneId: string): Promise<ZoneStats> {
-  const [imp] = await db.select({ total: count() }).from(impressions).where(eq(impressions.zoneId, zoneId));
-  const [clk] = await db.select({ total: count() }).from(clicks).where(eq(clicks.zoneId, zoneId));
+  const [imp] = await db
+    .select({
+      total: count(),
+      unique: countDistinct(impressions.sessionId),
+    })
+    .from(impressions)
+    .where(eq(impressions.zoneId, zoneId));
+  const [clk] = await db
+    .select({
+      total: count(),
+      unique: countDistinct(clicks.sessionId),
+    })
+    .from(clicks)
+    .where(eq(clicks.zoneId, zoneId));
 
   const impressionCount = imp?.total ?? 0;
   const clickCount = clk?.total ?? 0;
   const ctr = impressionCount > 0 ? clickCount / impressionCount : 0;
 
-  return { impressions: impressionCount, clicks: clickCount, ctr };
+  return {
+    impressions: impressionCount,
+    clicks: clickCount,
+    ctr,
+    uniqueViewers: imp?.unique ?? 0,
+    uniqueClickers: clk?.unique ?? 0,
+  };
 }
 
 export async function recordImpression(
@@ -27,6 +51,7 @@ export async function recordImpression(
     ipHash: string;
     userAgent?: string;
     referer?: string;
+    sessionId?: string;
     createdAt: string;
   },
 ): Promise<void> {
@@ -44,6 +69,7 @@ export async function recordClick(
     utmSource?: string;
     utmMedium?: string;
     utmCampaign?: string;
+    sessionId?: string;
     createdAt: string;
   },
 ): Promise<{ id: number }> {
@@ -61,6 +87,7 @@ export type NewConversion = {
   ipHash?: string;
   referer?: string;
   meta?: string;
+  sessionId?: string;
   createdAt: string;
 };
 

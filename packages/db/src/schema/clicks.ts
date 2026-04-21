@@ -12,6 +12,8 @@ export const clicks = sqliteTable('clicks', {
   utmSource: text('utm_source'),
   utmMedium: text('utm_medium'),
   utmCampaign: text('utm_campaign'),
+  /** 来自 muiad_sid cookie */
+  sessionId: text('session_id'),
   createdAt: text('created_at')
     .notNull()
     .$defaultFn(() => new Date().toISOString()),

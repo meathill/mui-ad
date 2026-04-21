@@ -2,6 +2,7 @@ import { createDb, stats } from '@muiad/db';
 import { Hono } from 'hono';
 import type { HonoEnv } from '../env';
 import { clientIp, sha256Hex } from '../lib/hash';
+import { ensureSessionId, readSessionId } from '../lib/session';
 
 const app = new Hono<HonoEnv>();
 
@@ -15,6 +16,9 @@ app.get('/click', async (c) => {
 
   const db = createDb(c.env.DB);
   const ipHash = await sha256Hex(clientIp(c.req));
+  // 点击多数来自 /serve 已种 cookie 的 session；万一没有（直链到 /track/click）
+  // 就地种一个
+  const sessionId = ensureSessionId(c);
   const utm = extractUtm(redirect);
   const click = await stats.recordClick(db, {
     zoneId,
@@ -25,6 +29,7 @@ app.get('/click', async (c) => {
     utmSource: utm.utm_source,
     utmMedium: utm.utm_medium,
     utmCampaign: utm.utm_campaign,
+    sessionId,
     createdAt: new Date().toISOString(),
   });
 
@@ -63,6 +68,9 @@ app.post('/conversion', async (c) => {
   }
 
   const ipHash = await sha256Hex(clientIp(c.req));
+  // conversion 只读不写 cookie：用户可能从 advertiser 侧 landing 页发来，
+  // 没必要在我们的域上补种新 sid
+  const sessionId = readSessionId(c);
   await stats.recordConversion(db, {
     adId,
     zoneId,
@@ -73,6 +81,7 @@ app.post('/conversion', async (c) => {
     ipHash,
     referer: c.req.header('referer'),
     meta: body.meta ? JSON.stringify(body.meta) : undefined,
+    sessionId,
     createdAt: new Date().toISOString(),
   });
   return c.json({ ok: true }, 201);

@@ -81,8 +81,12 @@ export default function ZoneStatsPage() {
       </div>
 
       <section className="mt-10 grid grid-cols-3 gap-4">
-        <BigStat label="展示" value={breakdown.totals.impressions} />
-        <BigStat label="点击" value={breakdown.totals.clicks} />
+        <BigStat
+          label="展示"
+          value={breakdown.totals.impressions}
+          sublabel={`${breakdown.totals.uniqueViewers} 独立`}
+        />
+        <BigStat label="点击" value={breakdown.totals.clicks} sublabel={`${breakdown.totals.uniqueClickers} 独立`} />
         <BigStat label="CTR" value={`${ctrPct}%`} accent />
       </section>
 
@@ -200,11 +204,22 @@ function BackLink() {
   );
 }
 
-function BigStat({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
+function BigStat({
+  label,
+  value,
+  accent,
+  sublabel,
+}: {
+  label: string;
+  value: string | number;
+  accent?: boolean;
+  sublabel?: string;
+}) {
   return (
     <div className="flex flex-col gap-1 rounded-2xl border border-rule/60 bg-paper p-5">
       <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft">{label}</span>
       <span className={`font-serif text-4xl ${accent ? 'text-ember-deep' : 'text-ink'}`}>{value}</span>
+      {sublabel && <span className="mt-0.5 font-mono text-[10px] text-ink-soft/70">{sublabel}</span>}
     </div>
   );
 }

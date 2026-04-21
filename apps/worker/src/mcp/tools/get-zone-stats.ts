@@ -26,8 +26,8 @@ export const getZoneStatsTool: McpTool<Args> = {
     const ctrPct = (s.ctr * 100).toFixed(2);
     return textResult(
       `广告位 ${args.zone_id} 的统计：\n` +
-        `- 展示量: ${s.impressions}\n` +
-        `- 点击量: ${s.clicks}\n` +
+        `- 展示量: ${s.impressions}（独立访客 ${s.uniqueViewers}）\n` +
+        `- 点击量: ${s.clicks}（独立点击者 ${s.uniqueClickers}）\n` +
         `- CTR: ${ctrPct}%`,
     );
   },

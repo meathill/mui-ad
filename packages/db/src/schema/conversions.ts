@@ -21,6 +21,8 @@ export const conversions = sqliteTable('conversions', {
   referer: text('referer'),
   /** Freeform JSON string for advertiser-specific metadata. */
   meta: text('meta'),
+  /** muiad_sid cookie，可以追广告曝光/点击/转化的完整链路 */
+  sessionId: text('session_id'),
   createdAt: text('created_at')
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
