@@ -4,20 +4,27 @@ import type { HonoEnv } from '../../env';
 
 const app = new Hono<HonoEnv>();
 
+function ownerScope(c: { var: { user: { id: string } | null } }): string | undefined {
+  return c.var.user?.id;
+}
+
 app.get('/', async (c) => {
   const db = createDb(c.env.DB);
-  return c.json({ ads: await ads.list(db) });
+  return c.json({ ads: await ads.list(db, ownerScope(c)) });
 });
 
 app.get('/:id', async (c) => {
   const db = createDb(c.env.DB);
-  const row = await ads.get(db, c.req.param('id'));
+  const row = await ads.get(db, c.req.param('id'), ownerScope(c));
   if (!row) return c.json({ error: 'Not found' }, 404);
   return c.json({ ad: row });
 });
 
 app.get('/:id/zones', async (c) => {
   const db = createDb(c.env.DB);
+  // 先确认归属
+  const ad = await ads.get(db, c.req.param('id'), ownerScope(c));
+  if (!ad) return c.json({ error: 'Not found' }, 404);
   const zones = await ads.listZonesOf(db, c.req.param('id'));
   return c.json({ zones });
 });
@@ -45,6 +52,7 @@ app.post('/', async (c) => {
     linkUrl: body.linkUrl,
     weight: body.weight ?? 1,
     status: 'active',
+    ownerId: c.var.user?.id ?? null,
     createdAt: new Date().toISOString(),
   });
   if (body.zoneIds && body.zoneIds.length > 0) {
@@ -63,7 +71,7 @@ app.patch('/:id', async (c) => {
     weight: number;
     status: 'active' | 'paused';
   }>;
-  const row = await ads.update(db, c.req.param('id'), patch);
+  const row = await ads.update(db, c.req.param('id'), patch, ownerScope(c));
   if (!row) return c.json({ error: 'Not found' }, 404);
   return c.json({ ad: row });
 });
@@ -74,6 +82,8 @@ app.post('/:id/zones', async (c) => {
     return c.json({ error: 'zoneIds is required' }, 400);
   }
   const db = createDb(c.env.DB);
+  const ad = await ads.get(db, c.req.param('id'), ownerScope(c));
+  if (!ad) return c.json({ error: 'Not found' }, 404);
   await ads.attachToZones(db, c.req.param('id'), body.zoneIds, body.weight ?? 1);
   return c.body(null, 204);
 });
@@ -84,13 +94,15 @@ app.delete('/:id/zones', async (c) => {
     return c.json({ error: 'zoneIds is required' }, 400);
   }
   const db = createDb(c.env.DB);
+  const ad = await ads.get(db, c.req.param('id'), ownerScope(c));
+  if (!ad) return c.json({ error: 'Not found' }, 404);
   await ads.detachFromZones(db, c.req.param('id'), body.zoneIds);
   return c.body(null, 204);
 });
 
 app.delete('/:id', async (c) => {
   const db = createDb(c.env.DB);
-  await ads.remove(db, c.req.param('id'));
+  await ads.remove(db, c.req.param('id'), ownerScope(c));
   return c.body(null, 204);
 });
 

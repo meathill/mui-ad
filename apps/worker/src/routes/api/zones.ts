@@ -4,14 +4,18 @@ import type { HonoEnv } from '../../env';
 
 const app = new Hono<HonoEnv>();
 
+function ownerScope(c: { var: { user: { id: string } | null } }): string | undefined {
+  return c.var.user?.id;
+}
+
 app.get('/', async (c) => {
   const db = createDb(c.env.DB);
-  return c.json({ zones: await zones.list(db) });
+  return c.json({ zones: await zones.list(db, ownerScope(c)) });
 });
 
 app.get('/:id', async (c) => {
   const db = createDb(c.env.DB);
-  const row = await zones.get(db, c.req.param('id'));
+  const row = await zones.get(db, c.req.param('id'), ownerScope(c));
   if (!row) return c.json({ error: 'Not found' }, 404);
   return c.json({
     zone: row,
@@ -37,6 +41,7 @@ app.post('/', async (c) => {
     width: body.width,
     height: body.height,
     status: 'active',
+    ownerId: c.var.user?.id ?? null,
     createdAt: new Date().toISOString(),
   });
   return c.json(
@@ -57,14 +62,14 @@ app.patch('/:id', async (c) => {
     height: number;
     status: 'active' | 'paused';
   }>;
-  const row = await zones.update(db, c.req.param('id'), patch);
+  const row = await zones.update(db, c.req.param('id'), patch, ownerScope(c));
   if (!row) return c.json({ error: 'Not found' }, 404);
   return c.json({ zone: row });
 });
 
 app.delete('/:id', async (c) => {
   const db = createDb(c.env.DB);
-  await zones.remove(db, c.req.param('id'));
+  await zones.remove(db, c.req.param('id'), ownerScope(c));
   return c.body(null, 204);
 });
 

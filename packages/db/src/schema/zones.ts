@@ -9,6 +9,7 @@ export const zones = sqliteTable('zones', {
   width: integer('width').notNull(),
   height: integer('height').notNull(),
   status: text('status').notNull().default('active'),
+  ownerId: text('owner_id'),
   createdAt: text('created_at')
     .notNull()
     .$defaultFn(() => new Date().toISOString()),

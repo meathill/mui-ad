@@ -37,6 +37,7 @@ app.post('/', async (c) => {
     height: body.height,
     productId: body.product_id,
     adId: body.ad_id,
+    ownerId: c.var.user?.id ?? null,
     createdAt: new Date().toISOString(),
   });
   return c.json({ generation: row }, 201);
@@ -48,7 +49,7 @@ app.get('/', async (c) => {
   const offset = clampInt(c.req.query('offset'), 0, Number.MAX_SAFE_INTEGER, 0);
   const productId = c.req.query('product_id') || undefined;
   const adId = c.req.query('ad_id') || undefined;
-  const rows = await aiGenerations.list(db, { productId, adId, limit, offset });
+  const rows = await aiGenerations.list(db, { productId, adId, limit, offset, ownerId: c.var.user?.id });
   return c.json({ generations: rows });
 });
 
@@ -56,7 +57,7 @@ app.delete('/:id', async (c) => {
   const id = Number.parseInt(c.req.param('id'), 10);
   if (!Number.isFinite(id)) return c.json({ error: 'Invalid id' }, 400);
   const db = createDb(c.env.DB);
-  await aiGenerations.remove(db, id);
+  await aiGenerations.remove(db, id, c.var.user?.id);
   return c.body(null, 204);
 });
 

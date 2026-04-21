@@ -4,7 +4,9 @@ import { Trash } from '@phosphor-icons/react';
 import { useCallback, useEffect, useState } from 'react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Field, inputClass } from '@/components/ui/field';
+import { apiFromConfig } from '@/lib/api';
 import { authClient } from '@/lib/auth-client';
+import { useConfig } from '@/lib/store';
 
 type AdminUser = {
   id: string;
@@ -16,7 +18,11 @@ type AdminUser = {
 
 export default function UsersPage() {
   const { data: session } = authClient.useSession();
+  const workerUrl = useConfig((s) => s.workerUrl);
+  const apiKey = useConfig((s) => s.apiKey);
   const [users, setUsers] = useState<AdminUser[] | null>(null);
+  const [claimResult, setClaimResult] = useState<string>('');
+  const [claiming, setClaiming] = useState(false);
   const [error, setError] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newName, setNewName] = useState('');
@@ -60,6 +66,22 @@ export default function UsersPage() {
     await load();
   }
 
+  async function handleClaim() {
+    const api = apiFromConfig(workerUrl, apiKey);
+    if (!api) return;
+    setClaiming(true);
+    setClaimResult('');
+    try {
+      const res = await api.admin.claimOrphans();
+      const { products, zones, ads, aiGenerations } = res.claimed;
+      setClaimResult(`已认领：产品 ${products} · 广告位 ${zones} · 广告 ${ads} · AI 生成 ${aiGenerations}。`);
+    } catch (e) {
+      setClaimResult(e instanceof Error ? e.message : String(e));
+    } finally {
+      setClaiming(false);
+    }
+  }
+
   async function confirmDelete() {
     if (!deleteId) return;
     const { error: err } = await authClient.admin.removeUser({ userId: deleteId });
@@ -93,6 +115,28 @@ export default function UsersPage() {
       </p>
 
       {error && <p className="mt-6 rounded-md bg-ember/10 px-4 py-3 font-mono text-xs text-ember-deep">{error}</p>}
+
+      <section className="mt-10 rounded-xl border border-rule/60 bg-paper-deep/20 p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="font-serif text-xl tracking-tight">认领孤儿数据</h2>
+            <p className="mt-1 text-sm text-ink-soft">
+              迁移前就存在的产品/广告位/广告/AI 生成，归属会是 NULL。点击把它们全都归到你名下。
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleClaim}
+            disabled={claiming}
+            className="shrink-0 rounded-full border border-ember/50 bg-ember/5 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.16em] text-ember-deep transition-colors hover:bg-ember/15 disabled:opacity-60"
+          >
+            {claiming ? '认领中…' : '认领孤儿数据'}
+          </button>
+        </div>
+        {claimResult && (
+          <p className="mt-4 rounded-md bg-paper px-4 py-3 font-mono text-xs text-ink-soft">{claimResult}</p>
+        )}
+      </section>
 
       <section className="mt-10 rounded-xl border border-rule/60 bg-paper-deep/20 p-6">
         <h2 className="font-serif text-xl tracking-tight">创建新账号</h2>

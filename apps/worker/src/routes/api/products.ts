@@ -4,14 +4,19 @@ import type { HonoEnv } from '../../env';
 
 const app = new Hono<HonoEnv>();
 
+// 数据作用域：session 用户 → 按 owner 过滤；root key → undefined 即跨用户
+function ownerScope(c: { var: { user: { id: string } | null } }): string | undefined {
+  return c.var.user?.id;
+}
+
 app.get('/', async (c) => {
   const db = createDb(c.env.DB);
-  return c.json({ products: await products.list(db) });
+  return c.json({ products: await products.list(db, ownerScope(c)) });
 });
 
 app.get('/:id', async (c) => {
   const db = createDb(c.env.DB);
-  const row = await products.get(db, c.req.param('id'));
+  const row = await products.get(db, c.req.param('id'), ownerScope(c));
   if (!row) return c.json({ error: 'Not found' }, 404);
   return c.json({ product: row });
 });
@@ -27,6 +32,7 @@ app.post('/', async (c) => {
     name: body.name,
     url: body.url,
     description: body.description,
+    ownerId: c.var.user?.id ?? null,
     createdAt: new Date().toISOString(),
   });
   return c.json({ product: row }, 201);
@@ -35,14 +41,14 @@ app.post('/', async (c) => {
 app.patch('/:id', async (c) => {
   const db = createDb(c.env.DB);
   const patch = (await c.req.json()) as Partial<{ name: string; url: string; description: string }>;
-  const row = await products.update(db, c.req.param('id'), patch);
+  const row = await products.update(db, c.req.param('id'), patch, ownerScope(c));
   if (!row) return c.json({ error: 'Not found' }, 404);
   return c.json({ product: row });
 });
 
 app.delete('/:id', async (c) => {
   const db = createDb(c.env.DB);
-  await products.remove(db, c.req.param('id'));
+  await products.remove(db, c.req.param('id'), ownerScope(c));
   return c.body(null, 204);
 });
 

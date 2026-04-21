@@ -21,6 +21,7 @@ export const aiGenerations = sqliteTable('ai_generations', {
   height: integer('height'),
   productId: text('product_id'),
   adId: text('ad_id'),
+  ownerId: text('owner_id'),
   createdAt: text('created_at')
     .notNull()
     .$defaultFn(() => new Date().toISOString()),

@@ -14,6 +14,7 @@ export const ads = sqliteTable('ads', {
   linkUrl: text('link_url').notNull(),
   weight: integer('weight').notNull().default(1),
   status: text('status').notNull().default('active'),
+  ownerId: text('owner_id'),
   createdAt: text('created_at')
     .notNull()
     .$defaultFn(() => new Date().toISOString()),

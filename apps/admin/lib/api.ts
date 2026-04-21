@@ -112,6 +112,12 @@ export interface Api {
     list: (filter?: { productId?: string; adId?: string; limit?: number; offset?: number }) => Promise<AiGeneration[]>;
     remove: (id: number) => Promise<void>;
   };
+  admin: {
+    claimOrphans: () => Promise<{
+      claimed: { products: number; zones: number; ads: number; aiGenerations: number };
+      ownerId: string;
+    }>;
+  };
 }
 
 export function makeApi(workerUrl: string, apiKey: string): Api {
@@ -254,6 +260,13 @@ export function makeApi(workerUrl: string, apiKey: string): Api {
         }
         return body;
       },
+    },
+    admin: {
+      claimOrphans: () =>
+        r<{
+          claimed: { products: number; zones: number; ads: number; aiGenerations: number };
+          ownerId: string;
+        }>('/api/admin/claim-orphans', { method: 'POST', body: '{}' }),
     },
   };
 }
