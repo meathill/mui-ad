@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { Product, Zone } from '@muiad/db';
+import { Sparkle } from '@phosphor-icons/react';
+import { AIBannerComposer } from '@/components/ai-banner-composer';
 import { Field, inputClass, inputMonoClass } from '@/components/ui/field';
 import { UploadInput } from '@/components/ui/upload-input';
 import { apiFromConfig } from '@/lib/api';
@@ -27,6 +29,7 @@ export default function NewAdPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [aiOpen, setAiOpen] = useState(false);
 
   useEffect(() => {
     const api = apiFromConfig(workerUrl, apiKey);
@@ -150,9 +153,30 @@ export default function NewAdPage() {
           />
         </Field>
 
-        <Field label="Banner 图片" hint="可选。拖拽上传或粘贴 URL（下一次迭代接回 AI 生成）">
-          <UploadInput value={imageUrl} onChange={setImageUrl} />
+        <Field label="Banner 图片" hint="可选。拖拽上传、粘贴 URL，或让 AI 基于产品生成再裁剪">
+          <UploadInput
+            value={imageUrl}
+            onChange={setImageUrl}
+            extraAction={
+              productId && (
+                <button
+                  type="button"
+                  onClick={() => setAiOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-ember/50 bg-ember/5 px-4 py-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-ember-deep transition-colors hover:bg-ember/15"
+                >
+                  <Sparkle size={12} weight="fill" /> ✨ AI 生成
+                </button>
+              )
+            }
+          />
         </Field>
+
+        <AIBannerComposer
+          open={aiOpen}
+          onOpenChange={setAiOpen}
+          product={products.find((p) => p.id === productId) ?? null}
+          onResult={(url) => setImageUrl(url)}
+        />
 
         <Field label="落地页 URL">
           <input
