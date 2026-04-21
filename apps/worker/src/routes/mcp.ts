@@ -6,7 +6,7 @@ const app = new Hono<HonoEnv>();
 
 app.post('/', async (c) => {
   const body = (await c.req.json()) as unknown;
-  const response = await dispatchMcp(body as never, c.env);
+  const response = await dispatchMcp(body as never, c.env, { user: c.var.user });
   if (response === null) {
     return c.body(null, 204);
   }

@@ -1,5 +1,5 @@
-import { createDb, stats } from '@muiad/db';
-import { type McpTool, textResult } from '../types';
+import { createDb, stats, zones } from '@muiad/db';
+import { errorResult, type McpTool, textResult } from '../types';
 
 interface Args {
   zone_id: string;
@@ -15,8 +15,13 @@ export const getZoneStatsTool: McpTool<Args> = {
     },
     required: ['zone_id'],
   },
-  async handler(args, env) {
+  async handler(args, env, caller) {
     const db = createDb(env.DB);
+    // per-user 调用：只能看自己名下的 zone
+    const zone = await zones.get(db, args.zone_id, caller.user?.id);
+    if (!zone) {
+      return errorResult(`找不到 zone_id=${args.zone_id}（可能不存在，或不属于你）。`);
+    }
     const s = await stats.zoneStats(db, args.zone_id);
     const ctrPct = (s.ctr * 100).toFixed(2);
     return textResult(

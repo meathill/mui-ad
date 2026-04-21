@@ -21,7 +21,7 @@ export const createZoneTool: McpTool<Args> = {
     },
     required: ['name', 'site_url', 'width', 'height'],
   },
-  async handler(args, env) {
+  async handler(args, env, caller) {
     const db = createDb(env.DB);
     const zone = await zones.create(db, {
       id: crypto.randomUUID(),
@@ -30,6 +30,7 @@ export const createZoneTool: McpTool<Args> = {
       width: args.width,
       height: args.height,
       status: 'active',
+      ownerId: caller.user?.id ?? null,
       createdAt: new Date().toISOString(),
     });
 

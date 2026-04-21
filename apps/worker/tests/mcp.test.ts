@@ -156,3 +156,101 @@ describe('/mcp — tools/call happy paths', () => {
     expect(body.error.message).toContain('nonexistent');
   });
 });
+
+// 走 dispatchMcp 直调 —— 验证 per-user scoping，不依赖 auth middleware 配置
+describe('/mcp — per-user scoping', () => {
+  let env: TestEnv;
+  beforeEach(async () => {
+    env = await makeEnv();
+    // 预置 alice / bob 两个用户，让 FK 能过
+    for (const uid of ['alice', 'bob']) {
+      await (env.DB as { prepare: (s: string) => { bind: (...a: unknown[]) => { run: () => Promise<unknown> } } })
+        .prepare('INSERT INTO user (id, name, email, email_verified, created_at, updated_at) VALUES (?, ?, ?, 0, ?, ?)')
+        .bind(uid, uid, `${uid}@t.invalid`, Date.now(), Date.now())
+        .run();
+    }
+  });
+
+  async function call(name: string, args: Record<string, unknown>, userId?: string) {
+    const { dispatchMcp } = await import('../src/mcp/server');
+    const caller = userId ? { user: { id: userId, email: `${userId}@t.invalid`, name: userId } } : { user: null };
+    const res = await dispatchMcp(
+      { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } },
+      env as never,
+      caller,
+    );
+    if (!res || 'error' in res) throw new Error(JSON.stringify(res));
+    return res.result as { content: Array<{ text: string }>; isError?: boolean };
+  }
+
+  it('两个用户各自 list_zones 只看到自己创建的', async () => {
+    const z1 = await call(
+      'muiad_create_zone',
+      { name: 'alice-zone', site_url: 'https://a.com', width: 300, height: 250 },
+      'alice',
+    );
+    const z2 = await call(
+      'muiad_create_zone',
+      { name: 'bob-zone', site_url: 'https://b.com', width: 728, height: 90 },
+      'bob',
+    );
+    expect(z1.isError).toBeFalsy();
+    expect(z2.isError).toBeFalsy();
+
+    const aliceList = await call('muiad_list_zones', {}, 'alice');
+    expect(aliceList.content[0]?.text).toContain('alice-zone');
+    expect(aliceList.content[0]?.text).not.toContain('bob-zone');
+
+    const bobList = await call('muiad_list_zones', {}, 'bob');
+    expect(bobList.content[0]?.text).toContain('bob-zone');
+    expect(bobList.content[0]?.text).not.toContain('alice-zone');
+
+    // root key（caller.user = null）能看全
+    const rootList = await call('muiad_list_zones', {});
+    expect(rootList.content[0]?.text).toContain('alice-zone');
+    expect(rootList.content[0]?.text).toContain('bob-zone');
+  });
+
+  it('create_ad 不能挂到别人的 zone（被静默跳过）', async () => {
+    // alice 创建 product + zone
+    const p = await call('muiad_register_product', { name: 'alice-prod', url: 'https://a.com' }, 'alice');
+    const productId = /product_id: (\S+)/.exec(p.content[0]?.text ?? '')?.[1];
+    const z = await call(
+      'muiad_create_zone',
+      { name: 'alice-zone', site_url: 'https://a.com', width: 300, height: 250 },
+      'alice',
+    );
+    const aliceZoneId = /zone_id: (\S+)/.exec(z.content[0]?.text ?? '')?.[1];
+
+    // bob 创建自己的 product 和 zone
+    const bp = await call('muiad_register_product', { name: 'bob-prod', url: 'https://b.com' }, 'bob');
+    const bobProductId = /product_id: (\S+)/.exec(bp.content[0]?.text ?? '')?.[1];
+
+    // bob 想把广告挂到 alice 的 zone → 被跳过
+    const ad = await call(
+      'muiad_create_ad',
+      {
+        product_id: bobProductId!,
+        title: 'evil ad',
+        link_url: 'https://b.com/l',
+        zone_ids: [aliceZoneId!],
+      },
+      'bob',
+    );
+    expect(ad.content[0]?.text).toContain('已投放到 0 个广告位');
+    expect(ad.content[0]?.text).toContain('1 个不在你名下');
+  });
+
+  it('get_zone_stats / get_ad_conversions 对别人的 id 返回错误', async () => {
+    const z = await call(
+      'muiad_create_zone',
+      { name: 'alice-zone', site_url: 'https://a.com', width: 300, height: 250 },
+      'alice',
+    );
+    const zoneId = /zone_id: (\S+)/.exec(z.content[0]?.text ?? '')?.[1];
+
+    const bobSees = await call('muiad_get_zone_stats', { zone_id: zoneId! }, 'bob');
+    expect(bobSees.isError).toBe(true);
+    expect(bobSees.content[0]?.text).toContain('不属于你');
+  });
+});

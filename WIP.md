@@ -125,11 +125,15 @@
   返回一次，DB 只存 sha256 hash。中间件鉴权顺序：session > `muiad_*` key >
   `MUIAD_API_KEY`。`/api-keys` 页生成 / 列出 / 撤销，命中时 `waitUntil` 异步更新
   `last_used_at`。migration 0009。
+- **Phase E（补漏）**：MCP 传入 user context。`McpTool.handler` 签名多一个
+  `caller: { user | null }` 参数，`dispatchMcp` 透传 `c.var.user`。6 个 tool 全量
+  接入：`register_product / create_zone / create_ad` 写入时挂 `ownerId`；
+  `list_zones / list_ads / get_zone_stats / get_ad_conversions` 读时按 ownerId
+  过滤；`create_ad` 还做 product_id + zone_ids 归属交叉校验（不能借别人的产品/
+  zone 来挂广告）。root key 依旧跨用户。mcp test 加 3 个 per-user scoping 用例，
+  50/50 通过。
 
 ## 待定事项
 
 - 自定义域名 `muiad.dev` 接入：待 DNS 迁至 CF 后，dashboard 加 Custom Domain，
   同时把 `NEXT_PUBLIC_SITE_URL` / `NEXT_PUBLIC_ASSETS_URL` 的值校准
-- MCP tool 目前仍用 root key 鉴权，下游 handler 在 root 模式下写入时 owner_id
-  为 NULL；要不要把 MCP 也迁到 per-user key、让 MCP 创建的数据自动归属用户，
-  等下次迭代决定（对 CI / 多实例节点编排有影响）

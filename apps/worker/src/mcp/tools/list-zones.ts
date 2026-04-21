@@ -5,9 +5,9 @@ export const listZonesTool: McpTool<Record<string, never>> = {
   name: 'muiad_list_zones',
   description: '列出所有广告位及其状态、尺寸和创建时间。',
   inputSchema: { type: 'object', properties: {} },
-  async handler(_args, env) {
+  async handler(_args, env, caller) {
     const db = createDb(env.DB);
-    const rows = await zones.list(db);
+    const rows = await zones.list(db, caller.user?.id);
     if (rows.length === 0) {
       return textResult('当前没有广告位。调用 muiad_create_zone 创建一个。');
     }

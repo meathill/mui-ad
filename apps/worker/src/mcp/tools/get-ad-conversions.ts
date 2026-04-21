@@ -1,5 +1,5 @@
-import { createDb, stats } from '@muiad/db';
-import { type McpTool, textResult } from '../types';
+import { ads, createDb, stats } from '@muiad/db';
+import { errorResult, type McpTool, textResult } from '../types';
 
 interface Args {
   ad_id: string;
@@ -15,8 +15,12 @@ export const getAdConversionsTool: McpTool<Args> = {
     },
     required: ['ad_id'],
   },
-  async handler(args, env) {
+  async handler(args, env, caller) {
     const db = createDb(env.DB);
+    const ad = await ads.get(db, args.ad_id, caller.user?.id);
+    if (!ad) {
+      return errorResult(`找不到 ad_id=${args.ad_id}（可能不存在，或不属于你）。`);
+    }
     const summary = await stats.conversionsForAd(db, args.ad_id);
     if (summary.total === 0) {
       return textResult(

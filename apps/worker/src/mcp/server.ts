@@ -1,6 +1,6 @@
 import type { Env } from '../env';
 import { ALL_TOOLS } from './tools';
-import { errorResult } from './types';
+import { errorResult, type McpCaller } from './types';
 
 const PROTOCOL_VERSION = '2025-06-18';
 const SERVER_INFO = { name: 'muiad', version: '0.1.0' };
@@ -22,7 +22,11 @@ type JsonRpcResponse =
  * Handle a single JSON-RPC 2.0 message from an MCP client.
  * Returns `null` for notifications (where the spec forbids a response).
  */
-export async function dispatchMcp(req: JsonRpcRequest, env: Env): Promise<JsonRpcResponse | null> {
+export async function dispatchMcp(
+  req: JsonRpcRequest,
+  env: Env,
+  caller: McpCaller = { user: null },
+): Promise<JsonRpcResponse | null> {
   const { id, method, params } = req;
   const isNotification = id === undefined;
 
@@ -72,7 +76,7 @@ export async function dispatchMcp(req: JsonRpcRequest, env: Env): Promise<JsonRp
       if (!tool) return err(-32601, `Unknown tool: ${name}`);
 
       try {
-        const result = await tool.handler(args as never, env);
+        const result = await tool.handler(args as never, env, caller);
         return ok(result);
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);

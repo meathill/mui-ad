@@ -19,13 +19,14 @@ export const registerProductTool: McpTool<Args> = {
     },
     required: ['name', 'url'],
   },
-  async handler(args, env) {
+  async handler(args, env, caller) {
     const db = createDb(env.DB);
     const product = await products.create(db, {
       id: crypto.randomUUID(),
       name: args.name,
       url: args.url,
       description: args.description,
+      ownerId: caller.user?.id ?? null,
       createdAt: new Date().toISOString(),
     });
     return textResult(`已登记产品「${product.name}」\n- product_id: ${product.id}\n- url: ${product.url}`);
