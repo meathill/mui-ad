@@ -5,6 +5,7 @@ export * as ads from './repository/ads';
 export * as stats from './repository/stats';
 export * as aiGenerations from './repository/ai-generations';
 export * as apiKeys from './repository/api-keys';
+export * as userSettings from './repository/user-settings';
 
 // Named types re-exported for consumers (e.g. apps/admin api client).
 export type { NewProduct, Product } from './repository/products';
@@ -20,3 +21,4 @@ export type {
 } from './repository/stats';
 export type { AiGeneration, NewAiGeneration } from './repository/ai-generations';
 export type { ApiKey, ApiKeyPublic, NewApiKey } from './repository/api-keys';
+export type { ApprovalMode, NewUserSettings, UserSettings } from './repository/user-settings';

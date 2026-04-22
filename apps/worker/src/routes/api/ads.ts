@@ -55,10 +55,14 @@ app.post('/', async (c) => {
     ownerId: c.var.user?.id ?? null,
     createdAt: new Date().toISOString(),
   });
+  let attach = { active: [] as string[], pending: [] as string[], skipped: [] as string[] };
   if (body.zoneIds && body.zoneIds.length > 0) {
-    await ads.attachToZones(db, row.id, body.zoneIds, body.weight ?? 1);
+    attach = await ads.attachToZones(db, row.id, body.zoneIds, {
+      weight: body.weight ?? 1,
+      advertiserId: c.var.user?.id ?? null,
+    });
   }
-  return c.json({ ad: row }, 201);
+  return c.json({ ad: row, attach }, 201);
 });
 
 app.patch('/:id', async (c) => {
@@ -84,8 +88,11 @@ app.post('/:id/zones', async (c) => {
   const db = createDb(c.env.DB);
   const ad = await ads.get(db, c.req.param('id'), ownerScope(c));
   if (!ad) return c.json({ error: 'Not found' }, 404);
-  await ads.attachToZones(db, c.req.param('id'), body.zoneIds, body.weight ?? 1);
-  return c.body(null, 204);
+  const attach = await ads.attachToZones(db, c.req.param('id'), body.zoneIds, {
+    weight: body.weight ?? 1,
+    advertiserId: c.var.user?.id ?? null,
+  });
+  return c.json(attach);
 });
 
 app.delete('/:id/zones', async (c) => {

@@ -135,7 +135,7 @@ describe('/mcp — tools/call happy paths', () => {
       zone_ids: [zoneId!],
       weight: 5,
     });
-    expect(a.result.content[0]?.text).toContain('已投放到 1 个广告位');
+    expect(a.result.content[0]?.text).toContain('已直接上线: 1');
 
     // 4. list ads
     const listed = await callTool('muiad_list_ads', {});
@@ -212,34 +212,74 @@ describe('/mcp — per-user scoping', () => {
     expect(rootList.content[0]?.text).toContain('bob-zone');
   });
 
-  it('create_ad 不能挂到别人的 zone（被静默跳过）', async () => {
-    // alice 创建 product + zone
-    const p = await call('muiad_register_product', { name: 'alice-prod', url: 'https://a.com' }, 'alice');
-    const productId = /product_id: (\S+)/.exec(p.content[0]?.text ?? '')?.[1];
+  // 跨用户投放 + approval_mode 行为
+  async function setMode(userId: string, mode: 'auto' | 'manual' | 'warm' | 'ai') {
+    const { userSettings } = await import('@muiad/db');
+    const { createDb } = await import('@muiad/db');
+    const db = createDb(env.DB as never);
+    await userSettings.upsert(db, userId, { approvalMode: mode });
+  }
+
+  it('approval mode=auto（默认）：bob 的广告立刻出现在 alice 的 zone 上', async () => {
     const z = await call(
       'muiad_create_zone',
       { name: 'alice-zone', site_url: 'https://a.com', width: 300, height: 250 },
       'alice',
     );
-    const aliceZoneId = /zone_id: (\S+)/.exec(z.content[0]?.text ?? '')?.[1];
+    const aliceZoneId = /zone_id: (\S+)/.exec(z.content[0]?.text ?? '')?.[1]!;
 
-    // bob 创建自己的 product 和 zone
     const bp = await call('muiad_register_product', { name: 'bob-prod', url: 'https://b.com' }, 'bob');
-    const bobProductId = /product_id: (\S+)/.exec(bp.content[0]?.text ?? '')?.[1];
+    const bobProductId = /product_id: (\S+)/.exec(bp.content[0]?.text ?? '')?.[1]!;
 
-    // bob 想把广告挂到 alice 的 zone → 被跳过
     const ad = await call(
       'muiad_create_ad',
-      {
-        product_id: bobProductId!,
-        title: 'evil ad',
-        link_url: 'https://b.com/l',
-        zone_ids: [aliceZoneId!],
-      },
+      { product_id: bobProductId, title: 'bob-ad', link_url: 'https://b.com/l', zone_ids: [aliceZoneId] },
       'bob',
     );
-    expect(ad.content[0]?.text).toContain('已投放到 0 个广告位');
-    expect(ad.content[0]?.text).toContain('1 个不在你名下');
+    expect(ad.content[0]?.text).toContain('已直接上线: 1');
+    expect(ad.content[0]?.text).toContain('等待 zone 所有者审批: 0');
+  });
+
+  it('approval mode=manual：bob 的广告进入 alice 的待审列表', async () => {
+    await setMode('alice', 'manual');
+
+    const z = await call(
+      'muiad_create_zone',
+      { name: 'alice-zone', site_url: 'https://a.com', width: 300, height: 250 },
+      'alice',
+    );
+    const aliceZoneId = /zone_id: (\S+)/.exec(z.content[0]?.text ?? '')?.[1]!;
+
+    const bp = await call('muiad_register_product', { name: 'bob-prod', url: 'https://b.com' }, 'bob');
+    const bobProductId = /product_id: (\S+)/.exec(bp.content[0]?.text ?? '')?.[1]!;
+
+    const ad = await call(
+      'muiad_create_ad',
+      { product_id: bobProductId, title: 'bob-ad', link_url: 'https://b.com/l', zone_ids: [aliceZoneId] },
+      'bob',
+    );
+    expect(ad.content[0]?.text).toContain('已直接上线: 0');
+    expect(ad.content[0]?.text).toContain('等待 zone 所有者审批: 1');
+  });
+
+  it('mode=manual 下自己挂自己仍然直通', async () => {
+    await setMode('alice', 'manual');
+
+    const ap = await call('muiad_register_product', { name: 'alice-prod', url: 'https://a.com' }, 'alice');
+    const aliceProductId = /product_id: (\S+)/.exec(ap.content[0]?.text ?? '')?.[1]!;
+    const z = await call(
+      'muiad_create_zone',
+      { name: 'alice-zone', site_url: 'https://a.com', width: 300, height: 250 },
+      'alice',
+    );
+    const aliceZoneId = /zone_id: (\S+)/.exec(z.content[0]?.text ?? '')?.[1]!;
+
+    const ad = await call(
+      'muiad_create_ad',
+      { product_id: aliceProductId, title: 'own-ad', link_url: 'https://a.com/l', zone_ids: [aliceZoneId] },
+      'alice',
+    );
+    expect(ad.content[0]?.text).toContain('已直接上线: 1');
   });
 
   it('muiad_scan_zones 跨用户返回全市场 active zones + category 过滤', async () => {

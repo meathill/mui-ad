@@ -2,6 +2,7 @@
 
 import {
   ChartBar,
+  CheckSquare,
   Gear,
   Key,
   Megaphone,
@@ -23,6 +24,7 @@ const NAV = [
   { href: '/products', label: '产品', icon: Package },
   { href: '/ads', label: '广告', icon: Megaphone },
   { href: '/ai-generations', label: 'AI 历史', icon: Sparkle },
+  { href: '/approvals', label: '待审批', icon: CheckSquare },
   { href: '/users', label: '用户', icon: Users, adminOnly: true },
   { href: '/api-keys', label: 'API Keys', icon: Key },
   { href: '/account', label: '我的账号', icon: User },

@@ -129,6 +129,21 @@ export interface Api {
     create: (name: string) => Promise<{ key: ApiKeyPublic; raw: string }>;
     revoke: (id: string) => Promise<void>;
   };
+  settings: {
+    get: () => Promise<{ userId: string; approvalMode: 'auto' | 'manual' | 'warm' | 'ai' }>;
+    update: (patch: { approvalMode: 'auto' | 'manual' | 'warm' | 'ai' }) => Promise<unknown>;
+  };
+  approvals: {
+    list: () => Promise<
+      Array<{
+        zoneAd: { zoneId: string; adId: string; advertiserId: string | null; createdAt: number | null };
+        ad: Ad;
+        zone: Zone;
+      }>
+    >;
+    approve: (zoneId: string, adId: string, note?: string) => Promise<void>;
+    reject: (zoneId: string, adId: string, note?: string) => Promise<void>;
+  };
 }
 
 export function makeApi(workerUrl: string, apiKey: string): Api {
@@ -287,6 +302,28 @@ export function makeApi(workerUrl: string, apiKey: string): Api {
           body: JSON.stringify({ name }),
         }),
       revoke: (id) => r<void>(`/api/api-keys/${id}`, { method: 'DELETE' }),
+    },
+    settings: {
+      get: async () =>
+        (await r<{ settings: { userId: string; approvalMode: 'auto' | 'manual' | 'warm' | 'ai' } }>('/api/settings'))
+          .settings,
+      update: (patch) => r<unknown>('/api/settings', { method: 'PATCH', body: JSON.stringify(patch) }),
+    },
+    approvals: {
+      list: async () =>
+        (
+          await r<{
+            pending: Array<{
+              zoneAd: { zoneId: string; adId: string; advertiserId: string | null; createdAt: number | null };
+              ad: Ad;
+              zone: Zone;
+            }>;
+          }>('/api/approvals')
+        ).pending,
+      approve: (zoneId, adId, note) =>
+        r<void>('/api/approvals/approve', { method: 'POST', body: JSON.stringify({ zoneId, adId, note }) }),
+      reject: (zoneId, adId, note) =>
+        r<void>('/api/approvals/reject', { method: 'POST', body: JSON.stringify({ zoneId, adId, note }) }),
     },
   };
 }

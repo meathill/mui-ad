@@ -1,4 +1,4 @@
-import { ads, createDb, products, zones } from '@muiad/db';
+import { ads, createDb, products } from '@muiad/db';
 import { type McpTool, textResult } from '../types';
 
 interface Args {
@@ -51,23 +51,20 @@ export const createAdTool: McpTool<Args> = {
       ownerId: caller.user?.id ?? null,
       createdAt: new Date().toISOString(),
     });
-    // per-user 调用：只能挂到自己名下的 zone；root key 不过滤
-    let attachedZoneIds = args.zone_ids;
-    if (caller.user) {
-      const mine = await zones.list(db, caller.user.id);
-      const mySet = new Set(mine.map((z) => z.id));
-      attachedZoneIds = args.zone_ids.filter((id) => mySet.has(id));
-    }
-    if (attachedZoneIds.length > 0) {
-      await ads.attachToZones(db, ad.id, attachedZoneIds, weight);
-    }
-    const skipped = args.zone_ids.length - attachedZoneIds.length;
-    return textResult(
-      `已创建广告「${ad.title}」\n` +
-        `- ad_id: ${ad.id}\n` +
-        `- 落地页: ${ad.linkUrl}\n` +
-        `- 已投放到 ${attachedZoneIds.length} 个广告位` +
-        (skipped > 0 ? `（${skipped} 个不在你名下，已跳过）` : ''),
-    );
+    // 放开跨用户投放：调 attachToZones，内部按每个 zone 所有者的 approval_mode
+    // 决定是立即上线还是排队等审核
+    const attach = await ads.attachToZones(db, ad.id, args.zone_ids, {
+      weight,
+      advertiserId: caller.user?.id ?? null,
+    });
+    const lines = [
+      `已创建广告「${ad.title}」`,
+      `- ad_id: ${ad.id}`,
+      `- 落地页: ${ad.linkUrl}`,
+      `- 已直接上线: ${attach.active.length}`,
+      `- 等待 zone 所有者审批: ${attach.pending.length}`,
+    ];
+    if (attach.skipped.length > 0) lines.push(`- 跳过（zone 不存在或已暂停）: ${attach.skipped.length}`);
+    return textResult(lines.join('\n'));
   },
 };

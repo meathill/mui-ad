@@ -146,8 +146,25 @@
       - admin `/zones/new` 和 `/zones/[id]/edit` 都多一块 "marketplace" 描述卡
       - REST + MCP create/update 都支持这 4 个字段
       - mcp test +1（scan_zones 跨用户 + category/tag 过滤），共 62 个全绿
-- [ ] **Step 2**：关掉 Phase E 的"只能挂自己 zone"硬限制，改为"挂任意 zone，
-      zone 所有者可在自己面板看到谁在投 / 一键下架"——广告市场的最小雏形
+- [x] **Step 2a**：跨用户投放 + 4 档审批模式（auto / manual / warm / ai）
+      - migration 0012：新增 `user_settings(user_id, approval_mode)`，
+        `zone_ads` 加 `status / advertiser_id / created_at / reviewed_at /
+        reviewed_by / review_note`；加 `idx_zone_ads_status`
+      - `ads.attachToZones` 重写为 approval router：按 zone 所有者的模式决定
+        zone_ad 的初值（auto→active, manual→pending, warm→有 active 就 active
+        否则 pending，ai→目前兜底 pending 等 Step 2b）；自己挂自己名下 zone
+        一律直通
+      - `listActiveByZone` 加 `zone_ads.status='active'` 过滤 —— /serve 只选真
+        上线的
+      - 新端点：`GET/PATCH /api/settings`（approval_mode 读写），
+        `GET /api/approvals`、`POST /api/approvals/{approve,reject}`
+      - admin：`/account` 增广告上线策略四选卡片；新 `/approvals` 页列出
+        待审的 (ad, zone) 对，一键批准/驳回，侧栏入口"待审批"
+      - MCP `muiad_create_ad` 输出文本改成三段：已直接上线 / 待审批 / 跳过
+      - tests: 移除"不能挂别人 zone"的 Phase E 用例（行为已变），新增 3 个
+        模式用例（auto 跨用户直通 / manual 进待审 / manual 下自己挂自己直通），
+        共 64/64
+- [ ] **Step 2b**：`ai` 模式接上 Cloudflare Workers AI 做 moderation
 - [ ] **Step 3**：`muiad_list_ads_performance`（广告 + impressions/clicks/
       conversions 聚合）+ `muiad_set_ad_status` 让 Agent 能基于效果做决策
 - [ ] **Step 4**：写一份 "Agent 范式" 文档（Claude Code / Cursor 里一段
