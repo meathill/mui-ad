@@ -29,6 +29,10 @@ app.post('/', async (c) => {
     siteUrl: string;
     width: number;
     height: number;
+    category?: string;
+    description?: string;
+    tags?: string;
+    audience?: string;
   };
   if (!body.name || !body.siteUrl || !body.width || !body.height) {
     return c.json({ error: 'name, siteUrl, width, height are required' }, 400);
@@ -41,6 +45,10 @@ app.post('/', async (c) => {
     width: body.width,
     height: body.height,
     status: 'active',
+    category: body.category,
+    description: body.description,
+    tags: body.tags,
+    audience: body.audience,
     ownerId: c.var.user?.id ?? null,
     createdAt: new Date().toISOString(),
   });
@@ -61,6 +69,10 @@ app.patch('/:id', async (c) => {
     width: number;
     height: number;
     status: 'active' | 'paused';
+    category: string;
+    description: string;
+    tags: string;
+    audience: string;
   }>;
   const row = await zones.update(db, c.req.param('id'), patch, ownerScope(c));
   if (!row) return c.json({ error: 'Not found' }, 404);

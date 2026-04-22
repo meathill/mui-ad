@@ -132,6 +132,27 @@
   zone 来挂广告）。root key 依旧跨用户。mcp test 加 3 个 per-user scoping 用例，
   50/50 通过。
 
+## MVP-2 AI Agent（进行中）
+
+思路：worker 把足够多的 MCP tool + 描述性字段暴露出来，真正的"AI"部分由 Agent
+客户端（Claude Code / Cursor）用 LLM 完成匹配 + 生成 + 决策。
+
+- [x] **Step 1**：zone marketplace 字段 + `muiad_scan_zones` 跨用户 tool
+      - migration 0011：`zones` 加 `category / description / tags / audience`，
+        加 `idx_zones_category`
+      - `zones.listMarketplace(db)`：跨用户返回所有 `status='active'` 的广告位
+      - 新 MCP tool `muiad_scan_zones`（8 个 tool 之一）：Agent 拿全网视图，
+        支持 `category` / `tag` 预过滤；文本输出把 description/audience 全吐出
+      - admin `/zones/new` 和 `/zones/[id]/edit` 都多一块 "marketplace" 描述卡
+      - REST + MCP create/update 都支持这 4 个字段
+      - mcp test +1（scan_zones 跨用户 + category/tag 过滤），共 62 个全绿
+- [ ] **Step 2**：关掉 Phase E 的"只能挂自己 zone"硬限制，改为"挂任意 zone，
+      zone 所有者可在自己面板看到谁在投 / 一键下架"——广告市场的最小雏形
+- [ ] **Step 3**：`muiad_list_ads_performance`（广告 + impressions/clicks/
+      conversions 聚合）+ `muiad_set_ad_status` 让 Agent 能基于效果做决策
+- [ ] **Step 4**：写一份 "Agent 范式" 文档（Claude Code / Cursor 里一段
+      prompt 跑完 scan → generate → place 全流程）
+
 ## 待定事项
 
 - 自定义域名 `muiad.dev` 接入：待 DNS 迁至 CF 后，dashboard 加 Custom Domain，

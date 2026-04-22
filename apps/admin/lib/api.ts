@@ -60,6 +60,10 @@ export interface Api {
       siteUrl: string;
       width: number;
       height: number;
+      category?: string;
+      description?: string;
+      tags?: string;
+      audience?: string;
     }) => Promise<{ zone: Zone; embedCode: string }>;
     update: (id: string, patch: Partial<NewZone>) => Promise<Zone>;
     setStatus: (id: string, status: ZoneStatus) => Promise<Zone>;

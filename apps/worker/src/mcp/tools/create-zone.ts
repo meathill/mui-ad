@@ -6,6 +6,10 @@ interface Args {
   site_url: string;
   width: number;
   height: number;
+  category?: string;
+  description?: string;
+  tags?: string;
+  audience?: string;
 }
 
 export const createZoneTool: McpTool<Args> = {
@@ -18,6 +22,13 @@ export const createZoneTool: McpTool<Args> = {
       site_url: { type: 'string', description: '所属站点 URL' },
       width: { type: 'integer', description: '宽度（px）' },
       height: { type: 'integer', description: '高度（px）' },
+      category: {
+        type: 'string',
+        description: "可选。大类，例如 'blog' / 'docs' / 'tool' / 'newsletter'，供 marketplace 过滤",
+      },
+      description: { type: 'string', description: '可选。内容简介（一两句话说明这个位置适合投什么）' },
+      tags: { type: 'string', description: "可选。逗号分隔的关键词，例如 'ai,devtools,typescript'" },
+      audience: { type: 'string', description: '可选。目标受众描述' },
     },
     required: ['name', 'site_url', 'width', 'height'],
   },
@@ -30,6 +41,10 @@ export const createZoneTool: McpTool<Args> = {
       width: args.width,
       height: args.height,
       status: 'active',
+      category: args.category,
+      description: args.description,
+      tags: args.tags,
+      audience: args.audience,
       ownerId: caller.user?.id ?? null,
       createdAt: new Date().toISOString(),
     });

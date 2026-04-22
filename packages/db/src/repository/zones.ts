@@ -32,6 +32,14 @@ export async function getPublic(db: Db, id: string): Promise<Zone | undefined> {
   return rows[0];
 }
 
+/**
+ * 广告位市场用：列出所有 `active` 状态的 zone，**跨用户**。
+ * Agent / 广告主用来挖掘可投的广告位。
+ */
+export async function listMarketplace(db: Db): Promise<Zone[]> {
+  return db.select().from(zones).where(eq(zones.status, 'active')).orderBy(desc(zones.createdAt));
+}
+
 export async function create(db: Db, data: NewZone): Promise<Zone> {
   const [row] = await db.insert(zones).values(data).returning();
   return row;

@@ -22,6 +22,10 @@ export default function NewZonePage() {
   const [siteUrl, setSiteUrl] = useState('');
   const [width, setWidth] = useState(300);
   const [height, setHeight] = useState(250);
+  const [category, setCategory] = useState('');
+  const [description, setDescription] = useState('');
+  const [tags, setTags] = useState('');
+  const [audience, setAudience] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -36,7 +40,16 @@ export default function NewZonePage() {
       return;
     }
     try {
-      const { zone } = await api.zones.create({ name, siteUrl, width, height });
+      const { zone } = await api.zones.create({
+        name,
+        siteUrl,
+        width,
+        height,
+        category: category || undefined,
+        description: description || undefined,
+        tags: tags || undefined,
+        audience: audience || undefined,
+      });
       router.replace(`/zones?created=${zone.id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -116,6 +129,46 @@ export default function NewZonePage() {
               className="w-28 rounded-lg border border-rule bg-paper px-3 py-2 font-mono text-sm focus:border-ember focus:outline-none focus:ring-2 focus:ring-ember/20"
             />
             <span className="self-center font-mono text-xs text-ink-soft">px</span>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-rule/60 bg-paper-deep/20 p-5">
+          <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-ember-deep">marketplace</p>
+          <p className="mt-1 text-sm text-ink-soft">
+            下面是给 Agent / 其他用户看的。填得越清楚，匹配的广告越贴。可以之后再补。
+          </p>
+          <div className="mt-5 space-y-5">
+            <Field label="分类" hint="blog · docs · tool · newsletter · playground ...">
+              <input
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="blog"
+                className="w-full rounded-lg border border-rule bg-paper px-4 py-3 font-mono text-sm focus:border-ember focus:outline-none focus:ring-2 focus:ring-ember/20"
+              />
+            </Field>
+            <Field label="简介" hint="一两句话说清楚这个位置适合投什么">
+              <textarea
+                rows={2}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full resize-none rounded-lg border border-rule bg-paper px-4 py-3 text-sm focus:border-ember focus:outline-none focus:ring-2 focus:ring-ember/20"
+              />
+            </Field>
+            <Field label="标签" hint="逗号分隔，例如：ai, devtools, typescript">
+              <input
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                placeholder="ai,devtools"
+                className="w-full rounded-lg border border-rule bg-paper px-4 py-3 font-mono text-sm focus:border-ember focus:outline-none focus:ring-2 focus:ring-ember/20"
+              />
+            </Field>
+            <Field label="目标受众" hint="比如：自托管 AI 工具的独立开发者">
+              <input
+                value={audience}
+                onChange={(e) => setAudience(e.target.value)}
+                className="w-full rounded-lg border border-rule bg-paper px-4 py-3 text-sm focus:border-ember focus:outline-none focus:ring-2 focus:ring-ember/20"
+              />
+            </Field>
           </div>
         </div>
 

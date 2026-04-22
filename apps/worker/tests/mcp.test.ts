@@ -79,6 +79,7 @@ describe('/mcp — tools/list', () => {
       'muiad_list_ads',
       'muiad_list_zones',
       'muiad_register_product',
+      'muiad_scan_zones',
     ]);
   });
 });
@@ -239,6 +240,52 @@ describe('/mcp — per-user scoping', () => {
     );
     expect(ad.content[0]?.text).toContain('已投放到 0 个广告位');
     expect(ad.content[0]?.text).toContain('1 个不在你名下');
+  });
+
+  it('muiad_scan_zones 跨用户返回全市场 active zones + category 过滤', async () => {
+    // alice 创建 blog zone
+    await call(
+      'muiad_create_zone',
+      {
+        name: 'alice-blog',
+        site_url: 'https://a.com',
+        width: 300,
+        height: 250,
+        category: 'blog',
+        description: 'indie hackers writing TypeScript',
+        tags: 'typescript,devtools',
+      },
+      'alice',
+    );
+    // bob 创建 docs zone
+    await call(
+      'muiad_create_zone',
+      {
+        name: 'bob-docs',
+        site_url: 'https://b.com',
+        width: 728,
+        height: 90,
+        category: 'docs',
+        tags: 'ai',
+      },
+      'bob',
+    );
+
+    // 无过滤：bob 也能扫到 alice 的广告位（market 语义跨用户）
+    const all = await call('muiad_scan_zones', {}, 'bob');
+    expect(all.content[0]?.text).toContain('alice-blog');
+    expect(all.content[0]?.text).toContain('bob-docs');
+    expect(all.content[0]?.text).toContain('typescript,devtools');
+
+    // category 过滤
+    const blogs = await call('muiad_scan_zones', { category: 'blog' }, 'bob');
+    expect(blogs.content[0]?.text).toContain('alice-blog');
+    expect(blogs.content[0]?.text).not.toContain('bob-docs');
+
+    // tag 过滤
+    const aiOnly = await call('muiad_scan_zones', { tag: 'ai' }, 'alice');
+    expect(aiOnly.content[0]?.text).toContain('bob-docs');
+    expect(aiOnly.content[0]?.text).not.toContain('alice-blog');
   });
 
   it('get_zone_stats / get_ad_conversions 对别人的 id 返回错误', async () => {
