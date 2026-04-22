@@ -262,6 +262,37 @@ describe('/mcp — per-user scoping', () => {
     expect(ad.content[0]?.text).toContain('等待 zone 所有者审批: 1');
   });
 
+  it('approval mode=ai：测试环境没有 AI binding，兜底 pending 并写 review_note', async () => {
+    await setMode('alice', 'ai');
+
+    const z = await call(
+      'muiad_create_zone',
+      { name: 'alice-zone', site_url: 'https://a.com', width: 300, height: 250 },
+      'alice',
+    );
+    const aliceZoneId = /zone_id: (\S+)/.exec(z.content[0]?.text ?? '')?.[1]!;
+
+    const bp = await call('muiad_register_product', { name: 'bob-prod', url: 'https://b.com' }, 'bob');
+    const bobProductId = /product_id: (\S+)/.exec(bp.content[0]?.text ?? '')?.[1]!;
+
+    const ad = await call(
+      'muiad_create_ad',
+      { product_id: bobProductId, title: 'bob-ad', link_url: 'https://b.com/l', zone_ids: [aliceZoneId] },
+      'bob',
+    );
+    expect(ad.content[0]?.text).toContain('等待 zone 所有者审批: 1');
+
+    // review_note 应该被填上（说明 AI 不可用）
+    // biome-ignore lint/suspicious/noExplicitAny: test DB shim
+    const rows = await (env.DB as any)
+      .prepare('SELECT review_note, status FROM zone_ads WHERE zone_id = ? ORDER BY created_at DESC LIMIT 1')
+      .bind(aliceZoneId)
+      .all();
+    const row = rows.results[0] as { review_note: string | null; status: string };
+    expect(row?.status).toBe('pending');
+    expect(row?.review_note ?? '').toMatch(/AI/);
+  });
+
   it('mode=manual 下自己挂自己仍然直通', async () => {
     await setMode('alice', 'manual');
 

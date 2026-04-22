@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { ads, createDb } from '@muiad/db';
 import type { HonoEnv } from '../../env';
+import { moderateAd } from '../../lib/moderation';
 
 const app = new Hono<HonoEnv>();
 
@@ -60,6 +61,7 @@ app.post('/', async (c) => {
     attach = await ads.attachToZones(db, row.id, body.zoneIds, {
       weight: body.weight ?? 1,
       advertiserId: c.var.user?.id ?? null,
+      moderate: ({ ad }) => moderateAd(c.env, ad),
     });
   }
   return c.json({ ad: row, attach }, 201);
@@ -91,6 +93,7 @@ app.post('/:id/zones', async (c) => {
   const attach = await ads.attachToZones(db, c.req.param('id'), body.zoneIds, {
     weight: body.weight ?? 1,
     advertiserId: c.var.user?.id ?? null,
+    moderate: ({ ad }) => moderateAd(c.env, ad),
   });
   return c.json(attach);
 });

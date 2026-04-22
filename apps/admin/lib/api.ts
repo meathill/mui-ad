@@ -136,7 +136,13 @@ export interface Api {
   approvals: {
     list: () => Promise<
       Array<{
-        zoneAd: { zoneId: string; adId: string; advertiserId: string | null; createdAt: number | null };
+        zoneAd: {
+          zoneId: string;
+          adId: string;
+          advertiserId: string | null;
+          createdAt: number | null;
+          reviewNote: string | null;
+        };
         ad: Ad;
         zone: Zone;
       }>
@@ -314,7 +320,13 @@ export function makeApi(workerUrl: string, apiKey: string): Api {
         (
           await r<{
             pending: Array<{
-              zoneAd: { zoneId: string; adId: string; advertiserId: string | null; createdAt: number | null };
+              zoneAd: {
+                zoneId: string;
+                adId: string;
+                advertiserId: string | null;
+                createdAt: number | null;
+                reviewNote: string | null;
+              };
               ad: Ad;
               zone: Zone;
             }>;

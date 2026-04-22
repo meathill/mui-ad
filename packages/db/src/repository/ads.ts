@@ -58,6 +58,15 @@ export type AttachResult = {
 };
 
 /**
+ * AI 审核回调。注入来自 worker 侧（持有 Workers AI binding），让 repo 保持
+ * 跟平台解耦。返回 allowed=true 就自动上线，false 就进 pending。
+ */
+export type ModerateFn = (ctx: {
+  ad: Ad;
+  zone: typeof zones.$inferSelect;
+}) => Promise<{ allowed: boolean; reason: string }>;
+
+/**
  * 把广告挂到一组 zone 上。每个 zone 的初始 status 由该 zone 所有者的
  * approval_mode 决定：
  *   - auto        → active
@@ -73,7 +82,12 @@ export async function attachToZones(
   db: Db,
   adId: string,
   zoneIds: string[],
-  opts: { weight?: number; advertiserId: string | null } = { advertiserId: null },
+  opts: {
+    weight?: number;
+    advertiserId: string | null;
+    /** approval_mode='ai' 模式下调用；不传则 'ai' 模式兜底走 pending */
+    moderate?: ModerateFn;
+  } = { advertiserId: null },
 ): Promise<AttachResult> {
   const result: AttachResult = { active: [], pending: [], skipped: [] };
   if (zoneIds.length === 0) return result;
@@ -84,6 +98,15 @@ export async function attachToZones(
   // 一次性把所有涉及的 zone 拉出来
   const zoneRows = await db.select().from(zones).where(inArray(zones.id, zoneIds));
   const zoneMap = new Map(zoneRows.map((z) => [z.id, z]));
+
+  // 懒加载 ad，只有在 moderate 真的要用的时候拉一次
+  let adRow: Ad | undefined;
+  async function loadAd(): Promise<Ad | undefined> {
+    if (adRow) return adRow;
+    const [r] = await db.select().from(ads).where(eq(ads.id, adId)).limit(1);
+    adRow = r;
+    return adRow;
+  }
 
   // 收集 owner -> mode，缓存，避免重复查
   const modeCache = new Map<string, ApprovalMode>();
@@ -105,16 +128,15 @@ export async function attachToZones(
     }
 
     let status: 'active' | 'pending' = 'active';
+    let note: string | null = null;
 
     if (opts.advertiserId && z.ownerId === opts.advertiserId) {
-      // 自己挂自己 —— 直通
       status = 'active';
     } else {
       const mode = await modeFor(z.ownerId);
       if (mode === 'auto') {
         status = 'active';
-      } else if (mode === 'manual' || mode === 'ai') {
-        // ai 暂时走 manual，Step 2b 接上真 AI 审核
+      } else if (mode === 'manual') {
         status = 'pending';
       } else if (mode === 'warm') {
         const [row] = await db
@@ -122,6 +144,21 @@ export async function attachToZones(
           .from(zoneAds)
           .where(and(eq(zoneAds.zoneId, zid), eq(zoneAds.status, 'active')));
         status = Number(row?.c ?? 0) > 0 ? 'active' : 'pending';
+      } else if (mode === 'ai') {
+        if (!opts.moderate) {
+          status = 'pending';
+          note = 'AI moderation unavailable; sent to manual review';
+        } else {
+          const ad = await loadAd();
+          if (!ad) {
+            status = 'pending';
+            note = 'Ad disappeared before moderation';
+          } else {
+            const verdict = await opts.moderate({ ad, zone: z });
+            status = verdict.allowed ? 'active' : 'pending';
+            note = verdict.reason;
+          }
+        }
       }
     }
 
@@ -132,6 +169,7 @@ export async function attachToZones(
       status,
       advertiserId: opts.advertiserId,
       createdAt: now,
+      reviewNote: note,
     });
     (status === 'active' ? result.active : result.pending).push(zid);
   }

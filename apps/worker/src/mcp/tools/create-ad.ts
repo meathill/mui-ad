@@ -1,4 +1,5 @@
 import { ads, createDb, products } from '@muiad/db';
+import { moderateAd } from '../../lib/moderation';
 import { type McpTool, textResult } from '../types';
 
 interface Args {
@@ -56,6 +57,7 @@ export const createAdTool: McpTool<Args> = {
     const attach = await ads.attachToZones(db, ad.id, args.zone_ids, {
       weight,
       advertiserId: caller.user?.id ?? null,
+      moderate: ({ ad }) => moderateAd(env, ad),
     });
     const lines = [
       `已创建广告「${ad.title}」`,

@@ -22,6 +22,9 @@
       "bucket_name": "muiad-uploads"
     }
   ],
+  "ai": {
+    "binding": "AI"
+  },
   "vars": {
     "MUIAD_URL": "https://api.muiad.meathill.com"
   }

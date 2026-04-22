@@ -6,7 +6,13 @@ import { apiFromConfig } from '@/lib/api';
 import { useConfig } from '@/lib/store';
 
 type Pending = {
-  zoneAd: { zoneId: string; adId: string; advertiserId: string | null; createdAt: number | null };
+  zoneAd: {
+    zoneId: string;
+    adId: string;
+    advertiserId: string | null;
+    createdAt: number | null;
+    reviewNote: string | null;
+  };
   ad: Ad;
   zone: Zone;
 };
@@ -98,6 +104,12 @@ export default function ApprovalsPage() {
                     <div className="mt-1 font-mono text-[11px] text-ink-soft/60">
                       想挂到 · {p.zone.name}（{p.zone.width}×{p.zone.height}）
                     </div>
+                    {p.zoneAd.reviewNote && (
+                      <div className="mt-2 rounded-md bg-paper-deep/40 px-3 py-2 font-mono text-[11px] text-ink-soft">
+                        <span className="uppercase tracking-[0.16em] text-ember-deep">AI 批注</span> ·{' '}
+                        {p.zoneAd.reviewNote}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="mt-4 flex justify-end gap-2">

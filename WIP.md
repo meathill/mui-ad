@@ -164,7 +164,18 @@
       - tests: 移除"不能挂别人 zone"的 Phase E 用例（行为已变），新增 3 个
         模式用例（auto 跨用户直通 / manual 进待审 / manual 下自己挂自己直通），
         共 64/64
-- [ ] **Step 2b**：`ai` 模式接上 Cloudflare Workers AI 做 moderation
+- [x] **Step 2b**：`ai` 模式接上 Cloudflare Workers AI 做 moderation
+      - `wrangler.jsonc` 加 `"ai": { "binding": "AI" }`，`env.ts` 加 `AI: Ai`
+      - 新模块 `apps/worker/src/lib/moderation.ts`：跑
+        `@cf/meta/llama-3.1-8b-instruct`，system prompt 列黑名单（违法/色情/
+        仇恨/钓鱼/虚假医疗金融/可疑落地页），要求模型返回 `{safe, reason}` JSON
+      - `ads.attachToZones` 新增可选 `moderate` 回调参数（repo 保持与 CF 解耦），
+        `ai` 模式有 callback 就调；无 callback / 异常 / JSON 解析失败 → 一律 pending
+        并把理由写进 `zone_ads.review_note`
+      - `moderate` 回调在 MCP create_ad + REST POST/PATCH ads 路径都接了
+        `moderateAd(env, ad)`
+      - 测试：新增"ai 模式 + 测试环境无 AI binding → 兜底 pending 且 review_note
+        带 'AI' 字样"用例；65/65 全绿
 - [ ] **Step 3**：`muiad_list_ads_performance`（广告 + impressions/clicks/
       conversions 聚合）+ `muiad_set_ad_status` 让 Agent 能基于效果做决策
 - [ ] **Step 4**：写一份 "Agent 范式" 文档（Claude Code / Cursor 里一段
