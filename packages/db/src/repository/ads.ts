@@ -252,3 +252,21 @@ export async function claimOrphans(db: Db, ownerId: string): Promise<number> {
   const rows = await db.update(ads).set({ ownerId }).where(isNull(ads.ownerId)).returning({ id: ads.id });
   return rows.length;
 }
+
+/** 批量拉一组广告的挂载信息（含 zone 名和 status），performance tool 用。 */
+export async function listAttachmentsForAds(
+  db: Db,
+  adIds: string[],
+): Promise<Array<{ adId: string; zoneId: string; zoneName: string; status: string }>> {
+  if (adIds.length === 0) return [];
+  return db
+    .select({
+      adId: zoneAds.adId,
+      zoneId: zoneAds.zoneId,
+      zoneName: zones.name,
+      status: zoneAds.status,
+    })
+    .from(zoneAds)
+    .innerJoin(zones, eq(zoneAds.zoneId, zones.id))
+    .where(inArray(zoneAds.adId, adIds));
+}

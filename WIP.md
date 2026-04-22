@@ -176,10 +176,20 @@
         `moderateAd(env, ad)`
       - 测试：新增"ai 模式 + 测试环境无 AI binding → 兜底 pending 且 review_note
         带 'AI' 字样"用例；65/65 全绿
-- [ ] **Step 3**：`muiad_list_ads_performance`（广告 + impressions/clicks/
-      conversions 聚合）+ `muiad_set_ad_status` 让 Agent 能基于效果做决策
-- [ ] **Step 4**：写一份 "Agent 范式" 文档（Claude Code / Cursor 里一段
-      prompt 跑完 scan → generate → place 全流程）
+- [x] **Step 3**：让 Agent 有完整反馈循环能力
+      - `stats.adTotals(adId)`：单条广告全量（含独立访客去重）
+      - `stats.adByZone(adId)`：按 zone 拆开的广告效果
+      - `ads.listAttachmentsForAds(adIds)`：批量拿挂载 + zone 名 + status
+      - 4 个新 MCP tool：`muiad_list_ads_performance`（dashboard）、
+        `muiad_set_ad_status`（暂停/恢复自己广告）、
+        `muiad_list_pending_attachments`（zone 所有者看待审）、
+        `muiad_review_attachment`（zone 所有者批准/驳回）
+      - Tool 集从 8 个扩到 12 个，按"发布方/广告主/数据"三组重排
+      - tests: +4 个用例（set_ad_status 自他归属校验 / list_ads_performance
+        跨用户隔离 / review_attachment 批准后上线 / review 跨用户被拒）
+        69/69 全绿
+- [x] **Step 4**：`docs/AGENT_GUIDE.md`——MCP 连接、12 tool 清单、三种 Agent
+      范式（自动投放 / 优化循环 / 半自动审批）、授权模型备忘、当前限制
 
 ## 待定事项
 

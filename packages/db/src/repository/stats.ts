@@ -170,6 +170,56 @@ export async function conversionsByAdInZone(db: Db, zoneId: string): Promise<Con
   }));
 }
 
+/**
+ * 单条广告的总量（全部 zone 聚合）。
+ * Agent 用于判断一条广告整体效果。
+ */
+export async function adTotals(db: Db, adId: string): Promise<ZoneStats> {
+  const [imp] = await db
+    .select({ total: count(), unique: countDistinct(impressions.sessionId) })
+    .from(impressions)
+    .where(eq(impressions.adId, adId));
+  const [clk] = await db
+    .select({ total: count(), unique: countDistinct(clicks.sessionId) })
+    .from(clicks)
+    .where(eq(clicks.adId, adId));
+  const impressionCount = imp?.total ?? 0;
+  const clickCount = clk?.total ?? 0;
+  return {
+    impressions: impressionCount,
+    clicks: clickCount,
+    ctr: impressionCount > 0 ? clickCount / impressionCount : 0,
+    uniqueViewers: imp?.unique ?? 0,
+    uniqueClickers: clk?.unique ?? 0,
+  };
+}
+
+/**
+ * 一条广告按 zone 拆开的量。Agent 用于判断"这条广告在哪个 zone 上跑得好"，
+ * 决定要不要把它从表现差的 zone 下架。
+ */
+export async function adByZone(
+  db: Db,
+  adId: string,
+): Promise<Array<{ zoneId: string; impressions: number; clicks: number; ctr: number }>> {
+  const impRows = await db
+    .select({ zoneId: impressions.zoneId, total: count() })
+    .from(impressions)
+    .where(eq(impressions.adId, adId))
+    .groupBy(impressions.zoneId);
+  const clkRows = await db
+    .select({ zoneId: clicks.zoneId, total: count() })
+    .from(clicks)
+    .where(eq(clicks.adId, adId))
+    .groupBy(clicks.zoneId);
+  const clkMap = new Map(clkRows.map((r) => [r.zoneId, Number(r.total ?? 0)]));
+  return impRows.map((r) => {
+    const imp = Number(r.total ?? 0);
+    const clk = clkMap.get(r.zoneId) ?? 0;
+    return { zoneId: r.zoneId, impressions: imp, clicks: clk, ctr: imp > 0 ? clk / imp : 0 };
+  });
+}
+
 /** Look up the ad + zone for a given click (so /track/conversion can infer zone_id). */
 export async function clickContext(db: Db, clickId: number): Promise<{ adId: string; zoneId: string } | undefined> {
   const [row] = await db

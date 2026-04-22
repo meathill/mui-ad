@@ -77,9 +77,13 @@ describe('/mcp — tools/list', () => {
       'muiad_get_ad_conversions',
       'muiad_get_zone_stats',
       'muiad_list_ads',
+      'muiad_list_ads_performance',
+      'muiad_list_pending_attachments',
       'muiad_list_zones',
       'muiad_register_product',
+      'muiad_review_attachment',
       'muiad_scan_zones',
+      'muiad_set_ad_status',
     ]);
   });
 });
@@ -357,6 +361,128 @@ describe('/mcp — per-user scoping', () => {
     const aiOnly = await call('muiad_scan_zones', { tag: 'ai' }, 'alice');
     expect(aiOnly.content[0]?.text).toContain('bob-docs');
     expect(aiOnly.content[0]?.text).not.toContain('alice-blog');
+  });
+
+  it('set_ad_status 只能改自己的广告，改别人的报 error', async () => {
+    // alice 有一个 zone，bob 创建广告挂上去（auto 模式 → 直通）
+    const z = await call(
+      'muiad_create_zone',
+      { name: 'alice-zone', site_url: 'https://a.com', width: 300, height: 250 },
+      'alice',
+    );
+    const aliceZoneId = /zone_id: (\S+)/.exec(z.content[0]?.text ?? '')?.[1]!;
+    const bp = await call('muiad_register_product', { name: 'bob-prod', url: 'https://b.com' }, 'bob');
+    const bobProductId = /product_id: (\S+)/.exec(bp.content[0]?.text ?? '')?.[1]!;
+    const ad = await call(
+      'muiad_create_ad',
+      { product_id: bobProductId, title: 'bob-ad', link_url: 'https://b.com/l', zone_ids: [aliceZoneId] },
+      'bob',
+    );
+    const adId = /ad_id: (\S+)/.exec(ad.content[0]?.text ?? '')?.[1]!;
+
+    // bob 暂停自己的广告 → OK
+    const paused = await call('muiad_set_ad_status', { ad_id: adId, status: 'paused' }, 'bob');
+    expect(paused.isError).toBeFalsy();
+    expect(paused.content[0]?.text).toContain('paused');
+
+    // alice 想暂停 bob 的广告 → 报错
+    const denied = await call('muiad_set_ad_status', { ad_id: adId, status: 'active' }, 'alice');
+    expect(denied.isError).toBe(true);
+    expect(denied.content[0]?.text).toContain('不属于你');
+  });
+
+  it('list_ads_performance 列出自己的广告 + 全量/按 zone 拆开', async () => {
+    // 建 alice 的 zone + bob 的 ad 挂上去
+    const z = await call(
+      'muiad_create_zone',
+      { name: 'alice-zone', site_url: 'https://a.com', width: 300, height: 250 },
+      'alice',
+    );
+    const aliceZoneId = /zone_id: (\S+)/.exec(z.content[0]?.text ?? '')?.[1]!;
+    const bp = await call('muiad_register_product', { name: 'bob-prod', url: 'https://b.com' }, 'bob');
+    const bobProductId = /product_id: (\S+)/.exec(bp.content[0]?.text ?? '')?.[1]!;
+    await call(
+      'muiad_create_ad',
+      { product_id: bobProductId, title: 'bob-ad', link_url: 'https://b.com/l', zone_ids: [aliceZoneId] },
+      'bob',
+    );
+
+    // bob 查看自己的广告效果
+    const perf = await call('muiad_list_ads_performance', {}, 'bob');
+    const text = perf.content[0]?.text ?? '';
+    expect(text).toContain('bob-ad');
+    expect(text).toContain('alice-zone');
+    expect(text).toContain('[active]'); // 挂载状态
+    expect(text).toContain('展示 0'); // 还没跑，数据为 0
+
+    // alice 查看自己的广告 —— 没有，应该是空
+    const aliceEmpty = await call('muiad_list_ads_performance', {}, 'alice');
+    expect(aliceEmpty.content[0]?.text).toContain('还没有广告');
+  });
+
+  it('review_attachment：manual 模式下，zone 所有者批准后 ad 在该 zone 上线', async () => {
+    await setMode('alice', 'manual');
+    const z = await call(
+      'muiad_create_zone',
+      { name: 'alice-zone', site_url: 'https://a.com', width: 300, height: 250 },
+      'alice',
+    );
+    const aliceZoneId = /zone_id: (\S+)/.exec(z.content[0]?.text ?? '')?.[1]!;
+    const bp = await call('muiad_register_product', { name: 'bob-prod', url: 'https://b.com' }, 'bob');
+    const bobProductId = /product_id: (\S+)/.exec(bp.content[0]?.text ?? '')?.[1]!;
+    const ad = await call(
+      'muiad_create_ad',
+      { product_id: bobProductId, title: 'bob-ad', link_url: 'https://b.com/l', zone_ids: [aliceZoneId] },
+      'bob',
+    );
+    const adId = /ad_id: (\S+)/.exec(ad.content[0]?.text ?? '')?.[1]!;
+
+    // alice 先看待审列表
+    const pending = await call('muiad_list_pending_attachments', {}, 'alice');
+    expect(pending.content[0]?.text).toContain(adId);
+    expect(pending.content[0]?.text).toContain('bob-ad');
+
+    // alice 批准
+    const approved = await call(
+      'muiad_review_attachment',
+      { zone_id: aliceZoneId, ad_id: adId, decision: 'approve' },
+      'alice',
+    );
+    expect(approved.isError).toBeFalsy();
+
+    // 现在待审列表应该空了
+    const afterPending = await call('muiad_list_pending_attachments', {}, 'alice');
+    expect(afterPending.content[0]?.text).toContain('没有待审批');
+
+    // bob 验证自己的广告现在在该 zone 上 active
+    const perf = await call('muiad_list_ads_performance', {}, 'bob');
+    expect(perf.content[0]?.text).toContain('[active]');
+  });
+
+  it('review_attachment：bob 想替 alice 审自己广告，被拒', async () => {
+    await setMode('alice', 'manual');
+    const z = await call(
+      'muiad_create_zone',
+      { name: 'alice-zone', site_url: 'https://a.com', width: 300, height: 250 },
+      'alice',
+    );
+    const aliceZoneId = /zone_id: (\S+)/.exec(z.content[0]?.text ?? '')?.[1]!;
+    const bp = await call('muiad_register_product', { name: 'bob-prod', url: 'https://b.com' }, 'bob');
+    const bobProductId = /product_id: (\S+)/.exec(bp.content[0]?.text ?? '')?.[1]!;
+    const ad = await call(
+      'muiad_create_ad',
+      { product_id: bobProductId, title: 'bob-ad', link_url: 'https://b.com/l', zone_ids: [aliceZoneId] },
+      'bob',
+    );
+    const adId = /ad_id: (\S+)/.exec(ad.content[0]?.text ?? '')?.[1]!;
+
+    const cheeky = await call(
+      'muiad_review_attachment',
+      { zone_id: aliceZoneId, ad_id: adId, decision: 'approve' },
+      'bob',
+    );
+    expect(cheeky.isError).toBe(true);
+    expect(cheeky.content[0]?.text).toContain('不属于你');
   });
 
   it('get_zone_stats / get_ad_conversions 对别人的 id 返回错误', async () => {
