@@ -166,16 +166,14 @@
         共 64/64
 - [x] **Step 2b**：`ai` 模式接上 Cloudflare Workers AI 做 moderation
       - `wrangler.jsonc` 加 `"ai": { "binding": "AI" }`，`env.ts` 加 `AI: Ai`
-      - 新模块 `apps/worker/src/lib/moderation.ts`：跑
-        `@cf/meta/llama-3.1-8b-instruct`，system prompt 列黑名单（违法/色情/
-        仇恨/钓鱼/虚假医疗金融/可疑落地页），要求模型返回 `{safe, reason}` JSON
-      - `ads.attachToZones` 新增可选 `moderate` 回调参数（repo 保持与 CF 解耦），
-        `ai` 模式有 callback 就调；无 callback / 异常 / JSON 解析失败 → 一律 pending
-        并把理由写进 `zone_ads.review_note`
-      - `moderate` 回调在 MCP create_ad + REST POST/PATCH ads 路径都接了
-        `moderateAd(env, ad)`
-      - 测试：新增"ai 模式 + 测试环境无 AI binding → 兜底 pending 且 review_note
-        带 'AI' 字样"用例；65/65 全绿
+      - `apps/worker/src/lib/moderation.ts` 两步审核：
+        1. 文本用 `@cf/meta/llama-3.1-8b-instruct` 查 title/content/linkUrl
+        2. 文本过了再用 `@cf/llava-hf/llava-1.5-7b-hf` 查 imageUrl（若有）
+        3. 图片 2MB 上限；拉不到 / 超大 / 超时 / 解析失败——一律 fail-closed
+      - `ads.attachToZones` 新增可选 `moderate` 回调（repo 保持跟 CF 解耦）；
+        MCP create_ad + REST POST/PATCH ads 都接上
+      - 测试：新增 "ai 模式 + 无 AI binding → pending + review_note 含 'AI'"
+        用例；69/69 全绿
 - [x] **Step 3**：让 Agent 有完整反馈循环能力
       - `stats.adTotals(adId)`：单条广告全量（含独立访客去重）
       - `stats.adByZone(adId)`：按 zone 拆开的广告效果

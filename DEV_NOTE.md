@@ -35,6 +35,32 @@
 - 后端 CORS 必须 `credentials: true` + 回显 origin（不能用 `*`）；前端 fetch 必须
   `credentials: 'include'`
 
+### 广告市场 = 跨用户投放 + 四档审批模式
+- **问题**：`auth Phase C/D` 把数据按 owner_id 隔离掉之后，广告市场的基本动作
+  "A 的广告出现在 B 的 zone 上"其实是**反隔离**的——需要允许，但不能让滥用打穿
+- **决策**：不做硬限制，改成"挂任意 active zone，但 zone 所有者 (每人) 选一个
+  审批策略"。四档：`auto / manual / warm / ai`，存在 `user_settings.approval_mode`
+- `zone_ads` 加 `status`（active/pending/rejected）+ `advertiser_id` +
+  `reviewed_*` 字段；`/serve` 只选 status='active' 的行
+- **广告主自己挂自己名下 zone 一律直通**（无视模式）——不然自己测自己的 zone
+  体验太傻
+- **`ai` 模式是 fail-closed 的**：模型挂 / JSON 解析失败 / 图片超大 / 图片拉不
+  到——一律降级成 pending 写 review_note 理由。宁可误挡也不误放
+- 实现走回调注入：`attachToZones` 收一个可选 `moderate: ModerateFn`，worker
+  侧才引入 `env.AI`，包 `@muiad/db` 保持跟平台解耦
+- Workers AI 模型选 `@cf/meta/llama-3.1-8b-instruct`（文本）+
+  `@cf/llava-hf/llava-1.5-7b-hf`（图片）；两步都过才上线
+- 图片 2MB 上限：超过直接拒，不喂 vision model（省钱 + 避免 OOM）
+
+### MCP tool 的 caller 透传
+- Phase E 补漏后，`McpTool.handler(args, env, caller)` 多一个 `caller` 参数
+  携带 `user | null`；`dispatchMcp` 从 `c.var.user` 透传下去
+- **写入 tool**（register_product / create_zone / create_ad）：把 ownerId
+  设成 caller.user.id（root key 下设 null→孤儿）
+- **读取 tool**（list_ads / list_zones / scan_zones 等）：按 caller.user.id
+  过滤；scan_zones 是**特意跨用户**的（市场视图）
+- 数据归属查询一律 repo 层 `ownerId?: string` 参数实现；`undefined` = 不过滤
+
 ### `owner_id` 允许 NULL + 认领机制
 - **为什么 nullable**：migration 0008 执行时用户表可能还空（Phase C 迁移在 Phase B 之前
   部署），硬写 NOT NULL 会失败；允许 NULL + 迁移里带 `UPDATE ... WHERE owner_id IS NULL`
@@ -127,6 +153,16 @@ pnpm --filter @muiad/web build  # next build 过类型检查
   再 `select hash from api_keys` 和 `echo -n "$KEY" | shasum -a 256` 比对
 
 ## 待长期关注
+
+- **Workers AI 审核的 prompt 调优**：现在是 V1，prompt 里的黑名单列表粗；等有真实
+  误判案例后 iteratively 改，不要一次调太多维度让行为漂移。可以考虑记个 sample
+  表把争议广告留档（目前没做）
+- **`warm` 模式的 trust decay**：当前只看 zone 当前有没有 active 挂载，不看质量或
+  时间衰减。理论上一个 spam 广告混进来后整个 zone 就永远 warm 了。真上了量再看要
+  不要加个"最近 7 天没被驳过"的条件
+- **per-user 的 Workers AI 用量配额**：免费额度共享整个 worker，恶意用户可以用
+  大图片刷。目前没做配额，先看指标
+
 
 - **waitlist 速率限制**：线上目前裸奔，上量后会被扫。要加 IP / 时间窗 middleware，或走 Turnstile
 - **`NEXT_PUBLIC_SITE_URL` 漂移**：换正式域名时 wrangler.jsonc 里 `vars` 要同步更新

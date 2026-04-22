@@ -1,13 +1,15 @@
 # 部署指南
 
-MVP-0（landing / worker / admin）和用户体系 Phase A–D 都已上线。
+MVP-0（landing / worker / admin）+ 用户体系 Phase A–D + MVP-2 AI Agent
+（跨用户投放市场 + 4 档审批模式 + Workers AI 文本/图片审核 + 完整反馈闭环
+12 个 MCP tool）都已上线。Agent 使用方式见 [AGENT_GUIDE.md](./docs/AGENT_GUIDE.md)。
 
 ## 线上地址
 
 - Landing / Waitlist：https://muiad.meathill.com（主域名）
 - Workers 默认域：https://muiad-web.meathill.workers.dev（兜底）
 - API / MCP Server：https://api.muiad.meathill.com
-  - REST：`/api/products|zones|ads|stats|ai-generations|api-keys|admin`
+  - REST：`/api/{products,zones,ads,stats,ai-generations,api-keys,settings,approvals,admin}`
     —— 鉴权三路（见下）
   - Auth：`/auth/*`（better-auth handler）+ `/auth-meta`（signup 是否开放）
   - MCP：`POST /mcp`（JSON-RPC 2.0，Bearer root key 或 per-user key）
@@ -15,8 +17,12 @@ MVP-0（landing / worker / admin）和用户体系 Phase A–D 都已上线。
 - Admin Panel：https://admin.muiad.meathill.com
   - 首访先进 `/setup` 填 Worker URL + root API key（存 localStorage）
   - 再进 `/signup`（仅首次）或 `/login` —— 走 session cookie
-  - `/users`（admin）管账号；`/api-keys` 生成 MCP/CI 用的 per-user key；
-    `/account` 改密码
+  - 主要页面：
+    - `/zones` `/ads` `/products` `/ai-generations` — 业务 CRUD
+    - `/approvals` — 对挂到自己 zone 上的广告做审批
+    - `/api-keys` — 生成 MCP/CI 用的 per-user key
+    - `/account` — 改密码 + **广告上线策略**（auto / manual / warm / ai 四档）
+    - `/users` — admin 管账号
   - robots `noindex, nofollow`
 
 ## API 鉴权三路
@@ -41,7 +47,8 @@ MVP-0（landing / worker / admin）和用户体系 Phase A–D 都已上线。
 | Worker | `apps/web` OpenNext 产物 | `muiad-web` |
 | Worker | `apps/worker` Hono REST + MCP | `muiad-api` |
 | Worker | `apps/admin` Admin Panel (OpenNext) | `muiad-admin` |
-| D1 | 业务库（waitlist / products / zones / ads / zone_ads / impressions / clicks / conversions / ai_generations / user / session / account / verification / api_keys） | `muiad` / `ca42d694-ebdb-4c62-984a-affa9d6fd891` |
+| D1 | 业务库（waitlist / products / zones / ads / zone_ads / impressions / clicks / conversions / ai_generations / user / session / account / verification / api_keys / user_settings） | `muiad` / `ca42d694-ebdb-4c62-984a-affa9d6fd891` |
+| Workers AI | `ai` 审批模式的 text + vision 审核 | `env.AI` binding |
 | D1 | OpenNext tag cache | `tag-cache` / `5f26868d-5d24-4645-8954-a27168f6fcd6` |
 | R2 | OpenNext 增量缓存 | `site-cache` |
 | DO | OpenNext cache queue | `DOQueueHandler`（v1 migration） |
@@ -111,6 +118,17 @@ CLOUDFLARE_ACCOUNT_ID=fdc63eeea83ae8f5234357308b9a638b pnpm run deploy
 `/setup` 页，之后存在访问者浏览器的 localStorage。日常用户自己在 admin
 `/api-keys` 生成的 per-user key 不经过这条路径。
 
+## Workers AI 审核
+
+`ai` 档的广告审批调 Cloudflare Workers AI：
+
+- 文本审核：`@cf/meta/llama-3.1-8b-instruct`，检查 title/content/linkUrl
+- 图片审核：`@cf/llava-hf/llava-1.5-7b-hf`，检查 banner 图（最大 2 MB，超过或拉不到直接拒）
+- 两步都过才自动上线；任何一步 fail-closed 降级到 manual pending，理由写进
+  `zone_ads.review_note`，在 admin `/approvals` 页有 "AI 批注" 标签可见
+- `wrangler.jsonc` 里 `ai: { binding: "AI" }`，无需额外 secret
+- 代码在 [apps/worker/src/lib/moderation.ts](./apps/worker/src/lib/moderation.ts)
+
 ## 初始化用户节点（只需一次）
 
 部署完 worker 和 admin 后：
@@ -164,6 +182,9 @@ curl -sX POST "$URL/mcp" -H "$AUTH" -H 'Content-Type: application/json' \
 `muiad_register_product` → `muiad_create_zone` → `muiad_create_ad` →
 `GET /serve?zone=…` → `GET /track/click?...` → `muiad_get_zone_stats`。
 预期：展示量 / 点击量 各 +1。
+
+跨用户 + Agent 优化的玩法见 [AGENT_GUIDE.md](./docs/AGENT_GUIDE.md)。
+当前 12 个 tool 按发布方 / 广告主 / 数据查询三组组织。
 
 ## MCP client 接入
 
