@@ -51,7 +51,7 @@ export default async function OpengraphImage() {
         <span>MCP-first // self-hosted // open source</span>
         <span style={{ display: 'flex', alignItems: 'baseline', gap: 12, color: INK_SOFT }}>
           <span style={{ fontFamily: 'Instrument Serif', fontSize: 32, letterSpacing: 0, color: INK }}>MuiAD</span>
-          <span style={{ fontSize: 14 }}>v0 · beta</span>
+          <span style={{ fontSize: 14 }}>v1 · public beta</span>
         </span>
       </div>
 
@@ -99,7 +99,7 @@ export default async function OpengraphImage() {
         }}
       >
         <span>muiad.meathill.com</span>
-        <span>built on cloudflare · by @meathill</span>
+        <span>self-hosted · MCP-first · cloudflare workers AI</span>
       </div>
     </div>,
     {

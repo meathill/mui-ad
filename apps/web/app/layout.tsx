@@ -25,9 +25,9 @@ const mono = JetBrains_Mono({
 });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://muiad.meathill.com';
-const TITLE = 'MuiAD — 写完代码，让 AI 顺手帮你推广';
+const TITLE = 'MuiAD — Self-hosted ad network for the MCP era';
 const DESCRIPTION =
-  '自托管、MCP-first 的开发者推广网络。你的 AI Coding Agent 通过 MCP 直接创建广告位、投放产品、记录转化——不用登广告后台，不用付广告费。';
+  'Self-hosted、MCP-first 的开发者推广网络。你的 AI Coding Agent 通过 MCP 创建广告位、生成物料、自动审核、自动优化——全部跑在你自己的 Cloudflare 账号里。一行代码不写，一分广告费不付。';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -43,6 +43,10 @@ export const metadata: Metadata = {
     'AI marketing',
     'developer marketing',
     'self-hosted',
+    'self-hosted ad network',
+    'cross-node marketplace',
+    'Workers AI moderation',
+    'decentralized advertising',
     'Cloudflare Workers',
     'indie hacker',
     'side project promotion',
@@ -91,6 +95,14 @@ const jsonLd = {
   applicationCategory: 'DeveloperApplication',
   operatingSystem: 'Cloudflare Workers',
   url: SITE_URL,
+  featureList: [
+    '12 MCP tools for ad ops',
+    'Workers AI content moderation (text + image)',
+    'Cross-user ad marketplace with 4 approval modes',
+    'Per-user API keys',
+    'Built-in conversion + UTM tracking',
+    'Self-hosted on your own Cloudflare account',
+  ],
   offers: {
     '@type': 'Offer',
     price: '0',
@@ -116,7 +128,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
             <Link href="/" className="flex items-baseline gap-2">
               <span className="font-serif text-2xl tracking-tight">MuiAD</span>
-              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-soft">v0 · beta</span>
+              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-soft">v1 · public beta</span>
             </Link>
             <nav className="flex items-center gap-5 text-sm">
               <a
