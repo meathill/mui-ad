@@ -7,14 +7,14 @@ export const openaiProvider: ImageProvider = {
   keyUrl: 'https://platform.openai.com/api-keys',
   models: [
     {
-      id: 'gpt-image-1.5',
-      label: 'GPT Image 1.5',
+      id: 'gpt-image-2',
+      label: 'GPT Image 2',
       defaultSize: '1024x1024',
       sizes: ['1024x1024', '1024x1536', '1536x1024'],
     },
     {
-      id: 'gpt-image-1',
-      label: 'GPT Image 1 (legacy)',
+      id: 'gpt-image-1.5',
+      label: 'GPT Image 1.5',
       defaultSize: '1024x1024',
       sizes: ['1024x1024', '1024x1536', '1536x1024'],
     },
