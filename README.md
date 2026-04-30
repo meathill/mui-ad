@@ -3,12 +3,18 @@
 </p>
 
 <p align="center">
-  MCP-first · Self-hosted · AI 驱动<br/>
-  去中心化的开发者推广网络
+  Self-hosted ad network for the MCP era.<br/>
+  MCP-first · 跑在你自己的 Cloudflare 账号里 · AI 驱动
 </p>
 
 <p align="center">
-  <code>npm create muiad@latest</code>
+  <a href="https://muiad.meathill.com">muiad.meathill.com</a> ·
+  <a href="https://admin.muiad.meathill.com">公开 demo 节点</a> ·
+  <a href="./docs/AGENT_GUIDE.md">Agent 使用指南</a>
+</p>
+
+<p align="center">
+  <strong>当前状态：v1 · public beta</strong>（MVP-0 / 1 / 2 已上线，MVP-3 / 4 路上）
 </p>
 
 ---
@@ -71,38 +77,46 @@ AI Agent 会自动完成以下全部流程：
 
 你不需要做任何手动操作。你甚至不需要打开 MuiAD 的 Dashboard。
 
-### 当前已实现的 MCP 能力（MVP-0）
+### 当前 12 个 MCP tool（MVP-2 已落地）
 
 ```
-广告位管理
-  muiad_create_zone          创建广告位，返回 zone_id + 嵌入代码
-  muiad_list_zones           列出所有广告位
+发布方（zone 所有者）
+  muiad_create_zone               创建广告位，返回 zone_id + 嵌入代码
+  muiad_list_zones                列出自己的广告位
+  muiad_list_pending_attachments  看待审广告挂载请求（带 AI 批注）
+  muiad_review_attachment         批准 / 驳回挂载
 
-产品与广告
-  muiad_register_product     登记要推广的产品
-  muiad_create_ad            创建广告并一次性投放到多个广告位
-  muiad_list_ads             列出所有广告
+广告主
+  muiad_scan_zones                跨节点扫描所有 active 广告位（市场视图）
+  muiad_register_product          登记要推广的产品
+  muiad_create_ad                 创建广告，一次性挂到多个 zone
+  muiad_list_ads                  列出自己的广告
+  muiad_set_ad_status             暂停 / 恢复自己的广告
+  muiad_list_ads_performance      看每条广告的全量 + 按 zone 拆开 + 挂载状态
 
 数据
-  muiad_get_zone_stats       单个广告位的展示量 / 点击量 / CTR
+  muiad_get_zone_stats            单个 zone 的展示 / 点击 / CTR / 独立访客
+  muiad_get_ad_conversions        单条广告的转化汇总（按事件类型）
 ```
 
-### 规划中（MVP-2 以后）
+完整使用指南、Agent prompt 模板、授权模型见 [AGENT_GUIDE.md](./docs/AGENT_GUIDE.md)。
 
-```
-AI 推广
-  muiad_auto_promote         一键推广：AI 完成扫描 + 生成物料 + 投放 + 优化
-  muiad_optimize_campaign    AI 优化现有投放
+### MVP-2 完整闭环
 
-网络
-  muiad_connect_network      连接到一个网络节点
-  muiad_scan_available_zones 扫描网络中可用广告位
-  muiad_submit_ad_to_zone    向某个广告位提交广告
+✅ **跨用户广告市场** — A 的广告能挂到 B 的 zone，每个 zone 所有者可选 4 档审批模式
 
-积分与转化
-  muiad_get_credits          查看积分余额
-  muiad_list_conversions     查看转化明细
-```
+| 模式 | 说明 |
+|---|---|
+| `auto` | 直接上线（默认） |
+| `manual` | 进 `/approvals` 待审 |
+| `warm` | 该 zone 已经有 active 广告 → 直通；否则 pending |
+| `ai` | Workers AI 自动审（文本 + 图片，fail-closed） |
+
+✅ **Workers AI 内置审核** — `@cf/meta/llama-3.1-8b-instruct` 审文本，`@cf/llava-hf/llava-1.5-7b-hf` 审图片；任一失败降级 pending，理由写进 `review_note`
+
+✅ **完整反馈循环** — Agent 拉 `list_ads_performance` 看效果 → 用 `set_ad_status` 自动暂停低 CTR 广告
+
+✅ **多用户体系** — better-auth + per-user API key（`muiad_...`）；admin 在 `/users` 建号发给广告主
 
 ---
 
@@ -153,13 +167,17 @@ AI 推广
 
 ## MCP 接入
 
-MuiAD 是"自托管"产品——每个人跑自己的节点。下面假设你已经按 **自部署** 一节建好了自己的 worker（`api.your-muiad.com`）并设好了 `MUIAD_API_KEY`。
+MuiAD 是"自托管"产品——每个人跑自己的节点。下面假设你已经按 **自部署** 一节建好了自己的 worker（`api.your-muiad.com`）并完成了 owner 注册。
+
+> **推荐用 per-user API key**，不要直接用 root `MUIAD_API_KEY`。
+> 在 admin `/api-keys` 页生成一个 `muiad_...` key（只显示一次，复制走）；
+> MCP 创建的数据会自动归到你账号下。
 
 **Claude Code** — 一行 CLI：
 
 ```bash
 claude mcp add --scope user --transport http muiad https://api.your-muiad.com/mcp \
-  --header "Authorization: Bearer $MUIAD_API_KEY"
+  --header "Authorization: Bearer muiad_xxx"
 ```
 
 或编辑 `~/.claude.json` / 项目 `.mcp.json`：
@@ -170,7 +188,7 @@ claude mcp add --scope user --transport http muiad https://api.your-muiad.com/mc
     "muiad": {
       "type": "http",
       "url": "https://api.your-muiad.com/mcp",
-      "headers": { "Authorization": "Bearer <MUIAD_API_KEY>" }
+      "headers": { "Authorization": "Bearer muiad_xxx" }
     }
   }
 }
@@ -188,7 +206,7 @@ claude mcp add --scope user --transport http muiad https://api.your-muiad.com/mc
       "args": [
         "-y", "mcp-remote",
         "https://api.your-muiad.com/mcp",
-        "--header", "Authorization:Bearer <MUIAD_API_KEY>",
+        "--header", "Authorization:Bearer muiad_xxx",
         "--transport", "http-only"
       ]
     }
@@ -203,7 +221,7 @@ claude mcp add --scope user --transport http muiad https://api.your-muiad.com/mc
   "mcpServers": {
     "muiad": {
       "url": "https://api.your-muiad.com/mcp",
-      "headers": { "Authorization": "Bearer <MUIAD_API_KEY>" }
+      "headers": { "Authorization": "Bearer muiad_xxx" }
     }
   }
 }
@@ -236,62 +254,92 @@ git clone https://github.com/meathill/mui-ad.git && cd mui-ad && pnpm install
 # 登录 Cloudflare
 cd apps/worker && pnpm wrangler login
 
-# 创建 D1 + 应用迁移
+# 创建 D1 + R2
 pnpm wrangler d1 create muiad
+pnpm wrangler r2 bucket create muiad-uploads
 # 把返回的 database_id 填进 apps/worker/wrangler.jsonc 和 apps/web/wrangler.jsonc
+
+# 应用迁移
 cd ../../packages/db && pnpm run migrate:remote
 
-# 设 API key
+# 设两个 secret（用 printf 避免 echo 带换行）
 cd ../../apps/worker
-echo "your-strong-secret" | pnpm wrangler secret put MUIAD_API_KEY
+printf '%s' "$(node -e 'console.log(crypto.randomBytes(32).toString("base64url"))')" | \
+  pnpm wrangler secret put MUIAD_API_KEY
+printf '%s' "$(node -e 'console.log(crypto.randomBytes(32).toString("base64url"))')" | \
+  pnpm wrangler secret put BETTER_AUTH_SECRET
 
-# 部署
+# 部署 worker
 pnpm wrangler deploy
+
+# 部署 admin（OpenNext）
+cd ../admin
+CLOUDFLARE_ACCOUNT_ID=<你的> pnpm run deploy
 ```
 
-部署完成后，你会得到一个 Worker URL，比如 `https://muiad-api.your-name.workers.dev`。
+### 初始化节点（只需一次）
 
-### 在 AI Agent 中配置 MCP
+部署完成后：
 
-参考上面「立即试用」一节的配置样例，把 URL 换成你自己节点的域名、key 换成你设的 `MUIAD_API_KEY` 即可。
+1. 访问 admin（默认 `https://muiad-admin.<subdomain>.workers.dev`）
+2. `/setup` 填 worker URL + `MUIAD_API_KEY`（root key，存 localStorage）
+3. `/signup` 注册第一个账号 → **自动成为 admin / owner**
+4. `/users` → 点 "认领孤儿数据" → 把现有 zone / ad / product 归到你名下
+5. `/account` → 选广告上线策略（auto / manual / warm / Workers AI）
+6. `/api-keys` → 生成一个 `muiad_...` key 给 MCP 用
+7. 之后新用户：admin 在 `/users` 直接建号发给对方；对方登录后去 `/account` 改密码
+
+之后 `/signup` 自动关闭——这个节点就属于你了。
 
 ### 开始使用
 
-现在你可以在 Cursor / Claude / 任何支持 MCP 的 AI Agent 中说：
+把 `muiad_...` key 配到 Claude Code（参考 [MCP 接入](#mcp-接入)），然后说：
 
 ```
-"帮我在 jsonformatter.pro 的侧边栏创建一个 300x250 的广告位"
-```
-
-```
-"注册我的产品 https://jsonformatter.pro，然后帮我推广到网络中所有匹配的广告位"
+"帮我用 MuiAD 登记产品 jsonformatter.pro，扫一下哪些 zone 匹配 devtools 类，
+ 给每个写一段贴合的文案挂上去。"
 ```
 
 ```
-"这周推广效果怎么样？帮我分析一下数据"
+"拉一下我所有广告的效果，CTR 低于 0.5% 且展示超过 200 的暂停掉。"
 ```
 
-就这样。没有其他步骤了。
+更多 prompt 范式见 [AGENT_GUIDE.md](./docs/AGENT_GUIDE.md)。
 
 ---
 
 ## 技术架构
 
 ```
-Cloudflare Workers
-├── D1 (SQLite)         结构化数据：广告位、产品、归因、积分
-├── KV                  缓存：广告位配置、会话
-├── R2                  文件存储：Banner 图片、生成的物料
-├── Queues              消息队列：异步任务
-└── Workers             计算层
-    ├── /api/v1/*       REST API
-    ├── /mcp            MCP Server 端点
-    ├── /widget.js      广告渲染脚本
-    ├── /track/*        归因追踪
-    └── /peer/*         节点间通信
+Cloudflare 资源
+├── D1 (SQLite)        广告位 / 产品 / 广告 / 归因 / 用户 / API key / 设置
+├── R2                 banner 图片 + AI 生成物料
+└── Workers AI         内容审核（@cf/meta/llama-3.1-8b + @cf/llava-hf/llava-1.5-7b）
+
+Worker (apps/worker)
+├── /auth/*            better-auth handler（session cookie 跨子域）
+├── /api/{products,zones,ads,stats,ai-generations,api-keys,settings,approvals,admin}
+├── /mcp               MCP Server（JSON-RPC 2.0，12 个 tool）
+├── /serve             /serve?zone=<id> 给 widget 拉广告
+├── /track/{click,conversion}
+├── /widget.js         嵌入脚本
+├── /uploads           authed R2 上传
+└── /files/<key>       R2 直读（公开，CDN 缓存）
+
+Admin (apps/admin · Next.js + OpenNext)
+├── /signup /login /account /users
+├── /zones /products /ads /ai-generations
+├── /approvals         待审广告挂载 + AI 批注展示
+└── /api-keys          per-user MCP key 生成 / 撤销
+
+鉴权三路（优先级从高到低）
+1. better-auth session cookie  → admin 面板
+2. Bearer muiad_<base64url>     → per-user API key（MCP / CI）
+3. Bearer <MUIAD_API_KEY>       → root（兜底 / 运维）
 ```
 
 **成本：Cloudflare 免费额度覆盖大多数独立开发者的需求。**
+Workers AI 审核也走免费配额；OpenAI / Gemini banner 生成走你自己的 key（BYOK）。
 
 ---
 
@@ -301,26 +349,36 @@ Cloudflare Workers
 mui-ad/
 ├── apps/
 │   ├── web/                 # 营销站 landing + waitlist（Next.js 16 + OpenNext）
-│   └── worker/              # API + MCP + /serve + /track（Hono on Workers）
+│   ├── admin/               # 节点管理面板（Next.js 16 + OpenNext）
+│   │   └── app/
+│   │       ├── (dashboard)/   # zones / ads / products / ai-generations /
+│   │       │                  # approvals / api-keys / users / account
+│   │       ├── login /signup
+│   │       └── setup
+│   └── worker/              # API + MCP + /auth + /serve + /track（Hono）
 │       └── src/
 │           ├── index.ts
-│           ├── middleware/auth.ts
-│           ├── modules/ad-server/  # 加权随机投放
+│           ├── auth/                # better-auth + admin plugin
+│           ├── lib/moderation.ts    # Workers AI 文本 + 图片审核
+│           ├── lib/session.ts       # muiad_sid cookie（独立访客去重）
+│           ├── middleware/auth.ts   # session > muiad_key > root key 三路
+│           ├── modules/ad-server/   # 加权随机投放
 │           ├── mcp/
-│           │   ├── server.ts       # JSON-RPC dispatcher
-│           │   └── tools/          # 每个 muiad_* 一个文件
+│           │   ├── server.ts        # JSON-RPC dispatcher
+│           │   └── tools/           # 12 个 muiad_* 一个文件
 │           └── routes/
-│               ├── api/            # zones/products/ads/stats CRUD
-│               ├── serve.ts
-│               ├── track.ts
-│               └── widget.ts
+│               ├── api/             # 9 个子 router
+│               ├── serve.ts /track.ts /widget.ts /uploads.ts /files.ts
+│               └── mcp.ts
 ├── packages/
-│   └── db/                  # 共享 schema + repository + 迁移
+│   └── db/                  # 共享 schema + repository + 12 个迁移
 │       ├── src/
-│       │   ├── schema/      # drizzle table 定义
+│       │   ├── schema/      # 14 张表的 drizzle 定义
 │       │   ├── repository/  # 按领域拆的纯函数 CRUD
-│       │   └── migrations/  # wrangler d1 迁移 SQL
+│       │   └── migrations/  # 0001 ~ 0012 SQL
 │       └── tests/
+├── docs/
+│   └── AGENT_GUIDE.md       # Agent 使用指南：tool 清单 + prompt 范式
 ├── TECH_SPEC.md
 ├── DEPLOYMENT.md
 ├── DEV_NOTE.md
@@ -331,13 +389,23 @@ mui-ad/
 
 ## Roadmap
 
-- [x] **MVP-0** 单实例广告投放 + MCP + 广告渲染（✅ 线上跑通）
-- [ ] **MVP-1** 归因追踪增强（UTM、跨站、去重）
-- [ ] **MVP-2** AI Agent（扫描 + 生成物料 + 自动投放 + 优化）
-- [ ] **MVP-3** 节点间通信 + 网络发现
-- [ ] **MVP-4** 积分系统 + 公共节点 all-mui-ad
-- [ ] **Dashboard** 可选的 Web 管理面板
-- [ ] **SDK** 前端 SDK（React / Vue / Vanilla）
+已发布：
+
+- [x] **MVP-0** 单实例广告投放 + MCP + widget 渲染
+- [x] **MVP-1** 完整归因追踪（UTM / referer / conversions / session 去重独立访客）
+- [x] **MVP-2** AI Agent 闭环
+  - 12 个 MCP tool
+  - 跨用户广告市场 + 4 档审批模式
+  - Workers AI 自动审核（文本 + 图片）
+  - BYOK banner 生成（OpenAI gpt-image-2 / Gemini）
+- [x] **Auth** better-auth + per-user API key + 用户体系
+- [x] **Admin Panel** 全套 CRUD + 数据可视化 + AI banner composer
+
+路上：
+
+- [ ] **MVP-3** 节点间通信 + 网络发现（A 节点的 Agent 看到 B 节点的广告位）
+- [ ] **MVP-4** 流量经济（积分互换 / Rev share / 公共节点 all-mui-ad）
+- [ ] **SDK** 前端嵌入 SDK（React / Vue / Vanilla）
 - [ ] **防作弊** 异常检测 + 声誉系统
 
 ---
