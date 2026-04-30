@@ -46,3 +46,9 @@ coverage/
 # Wrangler local dev secrets (per-worker) — NEVER commit
 .dev.vars
 **/.dev.vars
+
+# postplus skill 运行时输出
+.postplus/
+
+# tsbuildinfo
+*.tsbuildinfo
