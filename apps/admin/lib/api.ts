@@ -17,6 +17,7 @@ import type {
   ZoneStats,
   ZoneStatus,
 } from '@muiad/db';
+import { DEFAULT_WORKER_URL } from '@/lib/store';
 
 export class ApiError extends Error {
   constructor(
@@ -27,13 +28,13 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(workerUrl: string, apiKey: string, path: string, init: RequestInit = {}): Promise<T> {
+async function request<T>(workerUrl: string, apiKey: string | null, path: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(`${workerUrl}${path}`, {
     ...init,
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
+      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
       ...(init.headers ?? {}),
     },
   });
@@ -152,7 +153,7 @@ export interface Api {
   };
 }
 
-export function makeApi(workerUrl: string, apiKey: string): Api {
+export function makeApi(workerUrl: string, apiKey: string | null): Api {
   const r = <T>(path: string, init?: RequestInit) => request<T>(workerUrl, apiKey, path, init);
   return {
     products: {
@@ -277,7 +278,7 @@ export function makeApi(workerUrl: string, apiKey: string): Api {
         const res = await fetch(`${workerUrl}/uploads`, {
           method: 'POST',
           credentials: 'include',
-          headers: { Authorization: `Bearer ${apiKey}` },
+          headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined,
           body: form,
         });
         const body = (await res.json()) as {
@@ -340,8 +341,10 @@ export function makeApi(workerUrl: string, apiKey: string): Api {
   };
 }
 
-/** Hook-like helper for components: returns null until config is loaded. */
+/**
+ * 给组件用的便捷构造：workerUrl 缺省回退默认节点，apiKey 可空（纯靠 cookie 鉴权）。
+ * 返回类型保留 `| null` 仅为兼容历史调用处的 `if (!api) return` 守卫，实际恒返回 Api。
+ */
 export function apiFromConfig(workerUrl: string | null, apiKey: string | null): Api | null {
-  if (!workerUrl || !apiKey) return null;
-  return makeApi(workerUrl, apiKey);
+  return makeApi(workerUrl ?? DEFAULT_WORKER_URL, apiKey);
 }

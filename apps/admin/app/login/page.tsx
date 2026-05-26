@@ -83,6 +83,12 @@ export default function LoginPage() {
           </Link>
         </div>
       </form>
+
+      <p className="mt-12 border-t border-rule/60 pt-6 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-soft">
+        <Link href="/setup" className="hover:text-ember-deep">
+          我是站长？用密钥进入 →
+        </Link>
+      </p>
     </div>
   );
 }

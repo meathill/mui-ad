@@ -15,8 +15,8 @@ import {
 } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { authClient } from '@/lib/auth-client';
 import { useConfig } from '@/lib/store';
+import { useAuthMode } from '@/lib/use-auth-mode';
 
 const NAV = [
   { href: '/', label: '概览', icon: ChartBar },
@@ -35,8 +35,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const workerUrl = useConfig((s) => s.workerUrl);
   const clear = useConfig((s) => s.clear);
-  const { data: session } = authClient.useSession();
-  const isAdmin = session?.user?.role === 'admin';
+  const { isAdmin, isOperator } = useAuthMode();
 
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-rule/60 bg-paper-deep/40 px-5 py-7">
@@ -65,6 +64,9 @@ export default function Sidebar() {
       </nav>
 
       <div className="mt-auto flex flex-col gap-2 pt-6 text-xs text-ink-soft">
+        {isOperator && (
+          <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-ember-deep">站长 · root</div>
+        )}
         <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.18em]">
           <Gear size={12} />
           <span>连接到</span>

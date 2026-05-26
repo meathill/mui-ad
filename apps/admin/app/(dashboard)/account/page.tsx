@@ -6,6 +6,7 @@ import { Field, inputClass } from '@/components/ui/field';
 import { apiFromConfig } from '@/lib/api';
 import { authClient } from '@/lib/auth-client';
 import { useConfig } from '@/lib/store';
+import { useAuthMode } from '@/lib/use-auth-mode';
 
 type ApprovalMode = 'auto' | 'manual' | 'warm' | 'ai';
 
@@ -26,7 +27,7 @@ const MODES: Array<{ value: ApprovalMode; label: string; hint: string }> = [
 
 export default function AccountPage() {
   const router = useRouter();
-  const { data: session } = authClient.useSession();
+  const { user, isOperator } = useAuthMode();
   const workerUrl = useConfig((s) => s.workerUrl);
   const apiKey = useConfig((s) => s.apiKey);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -39,13 +40,15 @@ export default function AccountPage() {
   const [modeOk, setModeOk] = useState('');
 
   useEffect(() => {
+    // operator 模式没有个人账号，审批策略是 per-user 设置，跳过。
+    if (isOperator) return;
     const api = apiFromConfig(workerUrl, apiKey);
     if (!api) return;
     api.settings
       .get()
       .then((s) => setMode(s.approvalMode))
       .catch(() => setMode('auto'));
-  }, [workerUrl, apiKey]);
+  }, [workerUrl, apiKey, isOperator]);
 
   async function saveMode(next: ApprovalMode) {
     const api = apiFromConfig(workerUrl, apiKey);
@@ -88,15 +91,30 @@ export default function AccountPage() {
     router.replace('/login');
   }
 
+  if (isOperator) {
+    return (
+      <div className="max-w-2xl">
+        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ember-deep">account</p>
+        <h1 className="mt-3 font-serif text-4xl tracking-tight">账号</h1>
+        <div className="mt-8 rounded-xl border border-rule/60 bg-paper-deep/20 p-6">
+          <div className="font-serif text-lg">站长 · root</div>
+          <p className="mt-2 text-sm text-ink-soft">
+            你正以站长密钥（root）登录，这是跨租户的运营模式，没有个人账号。退出请用左下角「重新配置」清除密钥。
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl">
       <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ember-deep">account</p>
       <h1 className="mt-3 font-serif text-4xl tracking-tight">账号</h1>
 
-      {session?.user && (
+      {user && (
         <div className="mt-8 rounded-xl border border-rule/60 bg-paper-deep/20 p-6">
-          <div className="font-serif text-lg">{session.user.name}</div>
-          <div className="mt-1 font-mono text-[11px] text-ink-soft">{session.user.email}</div>
+          <div className="font-serif text-lg">{user.name}</div>
+          <div className="mt-1 font-mono text-[11px] text-ink-soft">{user.email}</div>
         </div>
       )}
 

@@ -7,6 +7,7 @@ import { Field, inputClass } from '@/components/ui/field';
 import { apiFromConfig } from '@/lib/api';
 import { authClient } from '@/lib/auth-client';
 import { useConfig } from '@/lib/store';
+import { useAuthMode } from '@/lib/use-auth-mode';
 
 type AdminUser = {
   id: string;
@@ -17,7 +18,7 @@ type AdminUser = {
 };
 
 export default function UsersPage() {
-  const { data: session } = authClient.useSession();
+  const { user, isAdmin, isOperator } = useAuthMode();
   const workerUrl = useConfig((s) => s.workerUrl);
   const apiKey = useConfig((s) => s.apiKey);
   const [users, setUsers] = useState<AdminUser[] | null>(null);
@@ -30,8 +31,6 @@ export default function UsersPage() {
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const isAdmin = session?.user?.role === 'admin';
-
   const load = useCallback(async () => {
     const { data, error: err } = await authClient.admin.listUsers({ query: { limit: 200 } });
     if (err) {
@@ -42,8 +41,9 @@ export default function UsersPage() {
   }, []);
 
   useEffect(() => {
-    if (isAdmin) load();
-  }, [isAdmin, load]);
+    // operator（根密钥）没有 better-auth 会话，admin.* 接口调不通，跳过加载。
+    if (isAdmin && !isOperator) load();
+  }, [isAdmin, isOperator, load]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -91,6 +91,19 @@ export default function UsersPage() {
     }
     setDeleteId(null);
     await load();
+  }
+
+  if (isOperator) {
+    return (
+      <div className="max-w-xl">
+        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ember-deep">users</p>
+        <h1 className="mt-3 font-serif text-4xl tracking-tight">用户管理需要 admin 账号</h1>
+        <p className="mt-4 text-ink-soft">
+          你正以站长密钥（root）进入，这是跨租户的数据运营模式。用户的增删查依赖 better-auth 的 admin 会话，请用站长的
+          admin 邮箱账号登录后管理。
+        </p>
+      </div>
+    );
   }
 
   if (!isAdmin) {
@@ -191,7 +204,7 @@ export default function UsersPage() {
                         admin
                       </span>
                     )}
-                    {u.id === session?.user.id && (
+                    {u.id === user?.id && (
                       <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-soft">（你）</span>
                     )}
                   </div>
@@ -200,9 +213,9 @@ export default function UsersPage() {
                 <button
                   type="button"
                   onClick={() => setDeleteId(u.id)}
-                  disabled={u.id === session?.user.id}
+                  disabled={u.id === user?.id}
                   className="rounded-full p-2 text-ink-soft/70 transition-colors hover:text-danger-deep disabled:cursor-not-allowed disabled:opacity-40"
-                  title={u.id === session?.user.id ? '不能删自己' : '删除'}
+                  title={u.id === user?.id ? '不能删自己' : '删除'}
                 >
                   <Trash size={14} />
                 </button>
