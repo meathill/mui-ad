@@ -14,9 +14,10 @@ async function userCount(env: Env): Promise<number> {
  * 每次请求都新建 instance（D1 binding 来自 c.env，不是 module-scope）。
  *
  * 策略：
- * - admin plugin 开启；第一个注册的用户自动成为 admin（hook 里数 user 表）
- * - 公开注册由前端 + 外层 /auth/sign-up/email 拦截双重 gating：只有第一个用户可走；
- *   之后新账号只能由 admin 通过 /users 页调 admin.createUser 创建
+ * - 没有 admin 角色：唯一特权身份是站长（root key / operator）。所有 email/password 用户都是普通用户。
+ * - admin plugin 仍开启（保留 role/ban 列与 schema 稳定），但不再给任何人分配 admin。
+ * - 公开注册由 /auth/sign-up/email 拦截 gating：只有第一个用户可自助注册；
+ *   之后的账号一律由站长（root key）通过 /api/admin/users 创建。
  */
 export function createAuth(env: Env) {
   const db = createDb(env.DB);
@@ -31,21 +32,6 @@ export function createAuth(env: Env) {
       minPasswordLength: 8,
     },
     plugins: [admin()],
-    databaseHooks: {
-      user: {
-        create: {
-          before: async (userData) => {
-            const total = await userCount(env);
-            return {
-              data: {
-                ...userData,
-                role: total === 0 ? 'admin' : 'user',
-              },
-            };
-          },
-        },
-      },
-    },
     trustedOrigins: [
       'https://admin.muiad.meathill.com',
       'https://muiad-admin.meathill.workers.dev',

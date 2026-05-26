@@ -6,19 +6,12 @@ import type { HonoEnv } from '../../env';
 const app = new Hono<HonoEnv>();
 
 /**
- * 只允许 admin role 的会话调用（bearerAuth 已验证 session；这里再查一次 role）。
- * root key 也允许（CI/运维场景），此时 ownerId 必须在 body 指定。
+ * 仅站长（root key / operator）可调，普通用户一律拒绝。
+ * 没有 admin 角色：用户管理、认领孤儿等特权操作都收敛到 root key。
  */
-async function requireAdmin(c: Context<HonoEnv>) {
-  if (c.var.isRootKey) return null; // 放行
-  const user = c.var.user;
-  if (!user) return c.json({ error: 'Unauthorized' }, 401);
-  const auth = createAuth(c.env);
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
-  // biome-ignore lint/suspicious/noExplicitAny: better-auth session type doesn't surface role
-  const role = (session?.user as any)?.role;
-  if (role !== 'admin') return c.json({ error: 'Forbidden: admin only' }, 403);
-  return null;
+function requireRoot(c: Context<HonoEnv>) {
+  if (c.var.isRootKey) return null;
+  return c.json({ error: 'Forbidden: root only' }, 403);
 }
 
 /**
@@ -26,7 +19,7 @@ async function requireAdmin(c: Context<HonoEnv>) {
  * 场景：首次部署、migrate 0008 时还没 user，数据留 NULL；owner 注册后调这个。
  */
 app.post('/claim-orphans', async (c) => {
-  const denied = await requireAdmin(c);
+  const denied = requireRoot(c);
   if (denied) return denied;
 
   let targetId: string | undefined = c.var.user?.id;
@@ -48,19 +41,18 @@ app.post('/claim-orphans', async (c) => {
 });
 
 /**
- * 用户管理（admin 会话 or root key 都可调）。
- * 注意：创建走 better-auth 的 signUpEmail 以正确哈希密码；role 由 auth 的
- * databaseHooks 决定（首个用户 admin，其余 user），与原 /users 页行为一致。
+ * 用户管理（仅站长 root key）。
+ * 创建走 better-auth 的 signUpEmail 以正确哈希密码；不再分配 admin，全员普通用户。
  */
 app.get('/users', async (c) => {
-  const denied = await requireAdmin(c);
+  const denied = requireRoot(c);
   if (denied) return denied;
   const db = createDb(c.env.DB);
   return c.json({ users: await users.list(db) });
 });
 
 app.post('/users', async (c) => {
-  const denied = await requireAdmin(c);
+  const denied = requireRoot(c);
   if (denied) return denied;
 
   const body = (await c.req.json().catch(() => ({}))) as { email?: string; password?: string; name?: string };
@@ -79,7 +71,7 @@ app.post('/users', async (c) => {
 });
 
 app.delete('/users/:id', async (c) => {
-  const denied = await requireAdmin(c);
+  const denied = requireRoot(c);
   if (denied) return denied;
 
   const id = c.req.param('id');
