@@ -4,24 +4,15 @@ import { Trash } from '@phosphor-icons/react';
 import { useCallback, useEffect, useState } from 'react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Field, inputClass } from '@/components/ui/field';
-import { apiFromConfig } from '@/lib/api';
-import { authClient } from '@/lib/auth-client';
+import { type AdminUserDto, apiFromConfig } from '@/lib/api';
 import { useConfig } from '@/lib/store';
 import { useAuthMode } from '@/lib/use-auth-mode';
-
-type AdminUser = {
-  id: string;
-  email: string;
-  name: string;
-  role?: string | null;
-  createdAt: string | Date;
-};
 
 export default function UsersPage() {
   const { user, isAdmin, isOperator } = useAuthMode();
   const workerUrl = useConfig((s) => s.workerUrl);
   const apiKey = useConfig((s) => s.apiKey);
-  const [users, setUsers] = useState<AdminUser[] | null>(null);
+  const [users, setUsers] = useState<AdminUserDto[] | null>(null);
   const [claimResult, setClaimResult] = useState<string>('');
   const [claiming, setClaiming] = useState(false);
   const [error, setError] = useState('');
@@ -32,33 +23,36 @@ export default function UsersPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const { data, error: err } = await authClient.admin.listUsers({ query: { limit: 200 } });
-    if (err) {
-      setError(err.message ?? '加载失败');
-      return;
+    const api = apiFromConfig(workerUrl, apiKey);
+    if (!api) return;
+    try {
+      setUsers(await api.admin.listUsers());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '加载失败');
     }
-    setUsers((data?.users ?? []) as AdminUser[]);
-  }, []);
+  }, [workerUrl, apiKey]);
 
   useEffect(() => {
-    // operator（根密钥）没有 better-auth 会话，admin.* 接口调不通，跳过加载。
-    if (isAdmin && !isOperator) load();
-  }, [isAdmin, isOperator, load]);
+    // operator（根密钥走 root key Bearer）与租户 admin（会话）都能调 /api/admin/users。
+    if (isAdmin) load();
+  }, [isAdmin, load]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setSubmitting(true);
-    const { error: err } = await authClient.admin.createUser({
-      email: newEmail.trim(),
-      password: newPassword,
-      name: newName.trim() || newEmail.trim(),
-      role: 'user',
-    });
-    setSubmitting(false);
-    if (err) {
-      setError(err.message ?? '创建失败');
+    const api = apiFromConfig(workerUrl, apiKey);
+    try {
+      await api?.admin.createUser({
+        email: newEmail.trim(),
+        password: newPassword,
+        name: newName.trim() || newEmail.trim(),
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '创建失败');
       return;
+    } finally {
+      setSubmitting(false);
     }
     setNewEmail('');
     setNewName('');
@@ -84,26 +78,16 @@ export default function UsersPage() {
 
   async function confirmDelete() {
     if (!deleteId) return;
-    const { error: err } = await authClient.admin.removeUser({ userId: deleteId });
-    if (err) {
-      setError(err.message ?? '删除失败');
-      throw new Error(err.message);
+    const api = apiFromConfig(workerUrl, apiKey);
+    try {
+      await api?.admin.deleteUser(deleteId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '删除失败';
+      setError(message);
+      throw new Error(message);
     }
     setDeleteId(null);
     await load();
-  }
-
-  if (isOperator) {
-    return (
-      <div className="max-w-xl">
-        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-ember-deep">users</p>
-        <h1 className="mt-3 font-serif text-4xl tracking-tight">用户管理需要 admin 账号</h1>
-        <p className="mt-4 text-ink-soft">
-          你正以站长密钥（root）进入，这是跨租户的数据运营模式。用户的增删查依赖 better-auth 的 admin 会话，请用站长的
-          admin 邮箱账号登录后管理。
-        </p>
-      </div>
-    );
   }
 
   if (!isAdmin) {
@@ -129,27 +113,29 @@ export default function UsersPage() {
 
       {error && <p className="mt-6 rounded-md bg-ember/10 px-4 py-3 font-mono text-xs text-ember-deep">{error}</p>}
 
-      <section className="mt-10 rounded-xl border border-rule/60 bg-paper-deep/20 p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="font-serif text-xl tracking-tight">认领孤儿数据</h2>
-            <p className="mt-1 text-sm text-ink-soft">
-              迁移前就存在的产品/广告位/广告/AI 生成，归属会是 NULL。点击把它们全都归到你名下。
-            </p>
+      {!isOperator && (
+        <section className="mt-10 rounded-xl border border-rule/60 bg-paper-deep/20 p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="font-serif text-xl tracking-tight">认领孤儿数据</h2>
+              <p className="mt-1 text-sm text-ink-soft">
+                迁移前就存在的产品/广告位/广告/AI 生成，归属会是 NULL。点击把它们全都归到你名下。
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleClaim}
+              disabled={claiming}
+              className="shrink-0 rounded-full border border-ember/50 bg-ember/5 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.16em] text-ember-deep transition-colors hover:bg-ember/15 disabled:opacity-60"
+            >
+              {claiming ? '认领中…' : '认领孤儿数据'}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={handleClaim}
-            disabled={claiming}
-            className="shrink-0 rounded-full border border-ember/50 bg-ember/5 px-4 py-2 font-mono text-[11px] uppercase tracking-[0.16em] text-ember-deep transition-colors hover:bg-ember/15 disabled:opacity-60"
-          >
-            {claiming ? '认领中…' : '认领孤儿数据'}
-          </button>
-        </div>
-        {claimResult && (
-          <p className="mt-4 rounded-md bg-paper px-4 py-3 font-mono text-xs text-ink-soft">{claimResult}</p>
-        )}
-      </section>
+          {claimResult && (
+            <p className="mt-4 rounded-md bg-paper px-4 py-3 font-mono text-xs text-ink-soft">{claimResult}</p>
+          )}
+        </section>
+      )}
 
       <section className="mt-10 rounded-xl border border-rule/60 bg-paper-deep/20 p-6">
         <h2 className="font-serif text-xl tracking-tight">创建新账号</h2>

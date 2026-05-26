@@ -46,6 +46,14 @@ async function request<T>(workerUrl: string, apiKey: string | null, path: string
   return body;
 }
 
+export interface AdminUserDto {
+  id: string;
+  email: string;
+  name: string;
+  role: string | null;
+  createdAt: string;
+}
+
 export interface Api {
   products: {
     list: () => Promise<Product[]>;
@@ -123,6 +131,9 @@ export interface Api {
       claimed: { products: number; zones: number; ads: number; aiGenerations: number };
       ownerId: string;
     }>;
+    listUsers: () => Promise<AdminUserDto[]>;
+    createUser: (data: { email: string; password: string; name?: string }) => Promise<void>;
+    deleteUser: (id: string) => Promise<void>;
   };
   apiKeys: {
     list: () => Promise<ApiKeyPublic[]>;
@@ -300,6 +311,9 @@ export function makeApi(workerUrl: string, apiKey: string | null): Api {
           claimed: { products: number; zones: number; ads: number; aiGenerations: number };
           ownerId: string;
         }>('/api/admin/claim-orphans', { method: 'POST', body: '{}' }),
+      listUsers: async () => (await r<{ users: AdminUserDto[] }>('/api/admin/users')).users,
+      createUser: (data) => r<void>('/api/admin/users', { method: 'POST', body: JSON.stringify(data) }),
+      deleteUser: (id) => r<void>(`/api/admin/users/${id}`, { method: 'DELETE' }),
     },
     apiKeys: {
       list: async () => (await r<{ keys: ApiKeyPublic[] }>('/api/api-keys')).keys,
