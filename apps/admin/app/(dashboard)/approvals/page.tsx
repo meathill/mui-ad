@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { Ad, Zone } from '@muiad/db';
+import TenantOnlyNotice from '@/components/tenant-only-notice';
 import { apiFromConfig } from '@/lib/api';
 import { useConfig } from '@/lib/store';
+import { useAuthMode } from '@/lib/use-auth-mode';
 
 type Pending = {
   zoneAd: {
@@ -18,6 +20,7 @@ type Pending = {
 };
 
 export default function ApprovalsPage() {
+  const { isOperator } = useAuthMode();
   const workerUrl = useConfig((s) => s.workerUrl);
   const apiKey = useConfig((s) => s.apiKey);
   const [rows, setRows] = useState<Pending[] | null>(null);
@@ -35,8 +38,9 @@ export default function ApprovalsPage() {
   }, [workerUrl, apiKey]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    // operator（root key）没有个人广告位，/api/approvals 会 401；跳过。
+    if (!isOperator) load();
+  }, [load, isOperator]);
 
   async function act(p: Pending, decision: 'approve' | 'reject') {
     const api = apiFromConfig(workerUrl, apiKey);
@@ -52,6 +56,14 @@ export default function ApprovalsPage() {
     } finally {
       setActing(null);
     }
+  }
+
+  if (isOperator) {
+    return (
+      <TenantOnlyNotice label="moderation" title="待审批是按账号的">
+        待审批是别人投到你广告位上的广告。站长（root）模式没有个人广告位，请用租户账号登录后审批。
+      </TenantOnlyNotice>
+    );
   }
 
   return (

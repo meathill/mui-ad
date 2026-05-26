@@ -24,10 +24,10 @@ const NAV = [
   { href: '/products', label: '产品', icon: Package },
   { href: '/ads', label: '广告', icon: Megaphone },
   { href: '/ai-generations', label: 'AI 历史', icon: Sparkle },
-  { href: '/approvals', label: '待审批', icon: CheckSquare },
+  { href: '/approvals', label: '待审批', icon: CheckSquare, tenantOnly: true },
   { href: '/users', label: '用户', icon: Users, adminOnly: true },
-  { href: '/api-keys', label: 'API Keys', icon: Key },
-  { href: '/account', label: '我的账号', icon: User },
+  { href: '/api-keys', label: 'API Keys', icon: Key, tenantOnly: true },
+  { href: '/account', label: '我的账号', icon: User, tenantOnly: true },
   { href: '/settings', label: '节点配置', icon: SlidersHorizontal },
 ];
 
@@ -45,7 +45,7 @@ export default function Sidebar() {
       </Link>
 
       <nav className="mt-10 flex flex-col gap-0.5 text-sm">
-        {NAV.filter((item) => !item.adminOnly || isAdmin).map((item) => {
+        {NAV.filter((item) => (!item.adminOnly || isAdmin) && !(item.tenantOnly && isOperator)).map((item) => {
           const active = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
           const Icon = item.icon;
           return (

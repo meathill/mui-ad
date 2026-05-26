@@ -3,12 +3,15 @@
 import { Copy, Trash } from '@phosphor-icons/react';
 import { useCallback, useEffect, useState } from 'react';
 import type { ApiKeyPublic } from '@muiad/db';
+import TenantOnlyNotice from '@/components/tenant-only-notice';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Field, inputClass } from '@/components/ui/field';
 import { apiFromConfig } from '@/lib/api';
 import { useConfig } from '@/lib/store';
+import { useAuthMode } from '@/lib/use-auth-mode';
 
 export default function ApiKeysPage() {
+  const { isOperator } = useAuthMode();
   const workerUrl = useConfig((s) => s.workerUrl);
   const apiKey = useConfig((s) => s.apiKey);
   const [keys, setKeys] = useState<ApiKeyPublic[] | null>(null);
@@ -30,8 +33,9 @@ export default function ApiKeysPage() {
   }, [workerUrl, apiKey]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    // operator（root key）没有个人账号，/api/api-keys 会 401；跳过。
+    if (!isOperator) load();
+  }, [load, isOperator]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -70,6 +74,14 @@ export default function ApiKeysPage() {
     await navigator.clipboard.writeText(freshlyCreated.raw);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  }
+
+  if (isOperator) {
+    return (
+      <TenantOnlyNotice label="api keys" title="API Keys 是按账号的">
+        站长（root）模式没有个人账号。API Keys 属于具体的租户账号，请用邮箱账号登录后在这里管理。
+      </TenantOnlyNotice>
+    );
   }
 
   const active = keys?.filter((k) => !k.revokedAt) ?? [];
