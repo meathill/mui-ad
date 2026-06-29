@@ -18,13 +18,15 @@ const WIDGET_SCRIPT = String.raw`(function () {
           var ad = data.ad;
           el.innerHTML =
             '<a href="' + ad.clickUrl + '" target="_blank" rel="noopener sponsored" ' +
-              'style="display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+              'style="display:flex;flex-direction:column;justify-content:center;gap:8px;' +
               'width:100%;height:100%;padding:12px;box-sizing:border-box;' +
               'border:1px solid #e5e0d0;border-radius:8px;text-decoration:none;color:inherit;' +
-              'font-family:system-ui,sans-serif;gap:8px;background:#fff;">' +
-              (ad.imageUrl ? '<img src="' + ad.imageUrl + '" style="max-width:100%;max-height:60%;object-fit:contain" alt="">' : '') +
-              '<strong style="font-size:14px;line-height:1.2">' + ad.title + '</strong>' +
-              (ad.content ? '<span style="font-size:12px;line-height:1.35;color:#666;text-align:center">' + ad.content + '</span>' : '') +
+              'font-family:system-ui,sans-serif;background:#fff;">' +
+              '<div style="display:flex;align-items:center;gap:10px">' +
+                (ad.imageUrl ? '<img src="' + ad.imageUrl + '" style="width:140px;height:70px;flex:none;object-fit:cover;border-radius:6px" alt="">' : '') +
+                '<strong style="flex:1;min-width:0;font-size:15px;line-height:1.25;overflow-wrap:anywhere">' + ad.title + '</strong>' +
+              '</div>' +
+              (ad.content ? '<span style="font-size:12px;line-height:1.4;color:#666">' + ad.content + '</span>' : '') +
             '</a>';
         })
         .catch(function () {});
