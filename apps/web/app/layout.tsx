@@ -89,29 +89,21 @@ export const metadata: Metadata = {
 
 const jsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'SoftwareApplication',
+  '@type': 'WebSite',
   name: 'MuiAD',
   description: DESCRIPTION,
-  applicationCategory: 'DeveloperApplication',
-  operatingSystem: 'Cloudflare Workers',
   url: SITE_URL,
-  featureList: [
-    '12 MCP tools for ad ops',
-    'Workers AI content moderation (text + image)',
-    'Cross-user ad marketplace with 4 approval modes',
-    'Per-user API keys',
-    'Built-in conversion + UTM tracking',
-    'Self-hosted on your own Cloudflare account',
-  ],
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'USD',
-  },
-  author: {
-    '@type': 'Person',
-    name: 'Meathill',
-    url: 'https://meathill.com',
+  inLanguage: ['zh-CN', 'en-US'],
+  sameAs: ['https://github.com/meathill/mui-ad'],
+  publisher: {
+    '@type': 'Organization',
+    name: 'MuiAD',
+    url: SITE_URL,
+    founder: {
+      '@type': 'Person',
+      name: 'Meathill',
+      url: 'https://meathill.com',
+    },
   },
 };
 
