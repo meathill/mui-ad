@@ -105,8 +105,22 @@
 ### Tailwind v4 必须显式装 PostCSS 插件
 - **坑**：v4 不再随 `tailwindcss` 默认自动注入 PostCSS 流程
 - **配置**：`pnpm add -D @tailwindcss/postcss` + 一个 `postcss.config.mjs`（见 `apps/web/postcss.config.mjs`）
-- **CSS 入口**用 `@import "tailwindcss";`（不是 v3 的 `@tailwind base/components/utilities`）
+- **CSS 入口**用 `@import "tailwindcss";`（不是 v3 的 `@tailwind/base/components/utilities`）
 - **自定义 token**在 CSS 里 `@theme { --color-xxx: ...; }` 定义，自动生成 `bg-xxx / text-xxx` 工具类
+
+### 静态资源缓存：`public/_headers` + 构建期静态 OG 图
+- OpenNext 的 `createAssets` 会把 `public/*` 原样复制进 `.open-next/assets`（
+  `@opennextjs/aws` 的 `fs.cpSync`），所以 Cloudflare 的 `_headers` 文件直接放
+  `public/` 即可生效，不需要改构建流程
+- `/_next/static/*` 在 assets 里走 ASSETS binding，`_headers` 能命中；但 Worker
+  动态响应的路由（prerender cache）不归 `_headers` 管
+- **next.config `headers()` 对 metadata image 路由不生效**：构建验证过，
+  `opengraph-image` 的响应头（`max-age=0, must-revalidate`）由 Next 构建期写死在
+  `.meta` 里，headers() 配置不会覆盖
+- **OG 图改构建期静态生成**：`scripts/generate-og.mjs`（Node 直接跑，`next/og.js`
+  的 ImageResponse 在 Node 24 可用）+ 显式 `openGraph.images: ['/og.png']`，
+  放弃 `app/opengraph-image.tsx` 动态路由。好处：纯静态资源 immutable 缓存、
+  不再每次渲染拉 3 个外部字体；内容变化只发生在重新部署时
 
 ## 部署约定
 
