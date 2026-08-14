@@ -84,6 +84,7 @@ describe('/mcp — tools/list', () => {
       'muiad_review_attachment',
       'muiad_scan_zones',
       'muiad_set_ad_status',
+      'muiad_upload_asset',
     ]);
   });
 });
@@ -159,6 +160,75 @@ describe('/mcp — tools/call happy paths', () => {
     const body = (await res.json()) as { error: { code: number; message: string } };
     expect(body.error.code).toBe(-32601);
     expect(body.error.message).toContain('nonexistent');
+  });
+});
+
+describe('/mcp — muiad_upload_asset', () => {
+  let env: TestEnv;
+  beforeEach(async () => {
+    env = await makeEnv();
+  });
+
+  // 1x1 PNG（跟 uploads.test.ts 同一份字节）
+  const PNG_BASE64 = (() => {
+    const bytes = new Uint8Array([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00,
+      0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4, 0x89, 0x00, 0x00, 0x00, 0x0d, 0x49,
+      0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00, 0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00,
+      0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+    ]);
+    let bin = '';
+    for (const b of bytes) bin += String.fromCharCode(b);
+    return btoa(bin);
+  })();
+
+  async function callTool(name: string, args: Record<string, unknown>) {
+    const res = await rpc(env, 'tools/call', { name, arguments: args });
+    return (await res.json()) as { result: { content: Array<{ text: string }>; isError?: boolean } };
+  }
+
+  it('data URL 上传成功，返回可直接用的公网 URL', async () => {
+    const body = await callTool('muiad_upload_asset', {
+      data: `data:image/png;base64,${PNG_BASE64}`,
+    });
+    expect(body.result.isError).toBeFalsy();
+    const text = body.result.content[0]?.text ?? '';
+    expect(text).toContain('已上传素材');
+    expect(text).toMatch(/key: [0-9a-f-]{36}\.png/);
+    expect(text).toContain('https://test.muiad.local/files/');
+  });
+
+  it('裸 base64 按魔数识别为 PNG', async () => {
+    const body = await callTool('muiad_upload_asset', { data: PNG_BASE64 });
+    const text = body.result.content[0]?.text ?? '';
+    expect(text).toMatch(/key: [0-9a-f-]{36}\.png/);
+  });
+
+  it('裸 base64 + content_type 可传 SVG', async () => {
+    const svg = btoa('<svg xmlns="http://www.w3.org/2000/svg"></svg>');
+    const body = await callTool('muiad_upload_asset', {
+      data: svg,
+      content_type: 'image/svg+xml',
+    });
+    expect(body.result.isError).toBeFalsy();
+    expect(body.result.content[0]?.text ?? '').toMatch(/key: [0-9a-f-]{36}\.svg/);
+  });
+
+  it('不支持的格式报错', async () => {
+    const body = await callTool('muiad_upload_asset', {
+      data: `data:image/tiff;base64,${btoa('not-an-image')}`,
+    });
+    expect(body.result.isError).toBe(true);
+    expect(body.result.content[0]?.text ?? '').toContain('Unsupported content-type');
+  });
+
+  it('超 5MB 报错', async () => {
+    const big = btoa('x'.repeat(5 * 1024 * 1024 + 1));
+    const body = await callTool('muiad_upload_asset', {
+      data: `data:image/png;base64,${big}`,
+    });
+    expect(body.result.isError).toBe(true);
+    expect(body.result.content[0]?.text ?? '').toContain('too large');
   });
 });
 

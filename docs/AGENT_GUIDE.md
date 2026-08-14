@@ -18,7 +18,7 @@ claude mcp add --transport http muiad https://api.muiad.meathill.com/mcp \
 
 ## Tool 清单
 
-12 个 tool，分三组：
+13 个 tool，分三组：
 
 ### 发布方（zone 所有者）
 
@@ -31,6 +31,8 @@ claude mcp add --transport http muiad https://api.muiad.meathill.com/mcp \
 ### 广告主
 
 - **`muiad_register_product`** — 登记一个要推广的产品
+- **`muiad_upload_asset`** — 上传 banner 图片（base64 / data URL）到自托管 R2，返回
+  可直接当 `image_url` 的公网 URL——Agent 端到端不用碰外部 CDN
 - **`muiad_scan_zones`** — **跨用户** 扫全市场的 active 广告位（支持 `category` / `tag` 过滤）
 - **`muiad_create_ad`** — 创建广告，一次性挂到多个 zone；返回 `已直接上线 / 待审批 / 跳过` 三段
 - **`muiad_list_ads`** — 看自己名下的所有 ad
@@ -54,15 +56,15 @@ claude mcp add --transport http muiad https://api.muiad.meathill.com/mcp \
 2. 用 muiad_scan_zones 扫描所有 active 广告位，找 category=blog 或 tool 的
 3. 从描述/标签里挑 3 个和 "AI / devtools / self-hosted" 最相关的
 4. 给每个选中的 zone 写一个和它受众贴合的 title + content（不要模板化，要具体）
-5. 用 muiad_create_ad 把这条广告一次挂到这 3 个 zone
-6. 报告：哪些直通了、哪些进了待审批、为什么
-
-Banner 图片现在可以先留空，明天再补。
+5. 用 muiad_upload_asset 上传一张 banner 图（data URL 或 base64）
+6. 用 muiad_create_ad 把广告连图一次挂到这 3 个 zone
+7. 报告：哪些直通了、哪些进了待审批、为什么
 ```
 
 Agent 会：
 - 扫市场 → 用 LLM 自己做匹配度评分
 - 为每个 zone 量身写文案（而不是一条文案贴所有 zone）
+- 图片走 `muiad_upload_asset` 托管，不依赖外部 CDN
 - 跨用户挂广告，尊重每个 zone 所有者的 `approval_mode`
 
 ## 范式二：优化循环
@@ -109,8 +111,9 @@ Agent 自己会基于数据判断并执行。
 
 ## 当前限制
 
-- **图片内容审核还没做**：`ai` 模式目前只看 `title / content / linkUrl`，不看
-  `imageUrl`。恶意 banner 图配一个干净标题能溜过去——先靠 zone 所有者看卡片缩略图挡
 - **没有批量操作 tool**：批量暂停 / 批量审批得自己循环调。如果你发现常做，开 issue
 - **`warm` 模式的判断**：只看当前 zone 是否已经有 active 挂载，不看该挂载的历史表现
   ——粗粒度但能跑
+- **上传不做尺寸校验**：`muiad_upload_asset` 只限类型 + 5MB，不校验图片尺寸是否
+  贴合 zone 的 `width/height`——超尺寸 banner 会被浏览器拉伸，建议生成的图按目标
+  zone 尺寸做

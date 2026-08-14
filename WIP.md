@@ -188,6 +188,13 @@
         69/69 全绿
 - [x] **Step 4**：`docs/AGENT_GUIDE.md`——MCP 连接、12 tool 清单、三种 Agent
       范式（自动投放 / 优化循环 / 半自动审批）、授权模型备忘、当前限制
+- [x] **Step 5**：素材托管 + 静态资源缓存
+      - `muiad_upload_asset` MCP tool：data URL / 裸 base64 → R2（类型白名单 +
+        5MB），返回可直接当 image_url 的公网 URL；抽公共 `lib/assets.ts` 与
+        REST `/uploads` 共用；tool 集 12 → 13，AGENT_GUIDE 同步
+      - `apps/{web,admin}/public/_headers`：`/_next/static/*` 一年 immutable；
+        OG 图确认构建期静态生成
+      - worker 78 测试全绿（含 5 个新上传用例）
 
 ## 待定事项
 
