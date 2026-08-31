@@ -1,7 +1,9 @@
-import type { Metadata } from 'next';
-import { Instrument_Serif, JetBrains_Mono, Geist } from 'next/font/google';
-import Link from 'next/link';
+import { brandCatalog, getOrganizationJsonLd } from 'meathill-brand';
+import { BrandFooter, BrandHeader } from 'meathill-brand-react';
 import { GithubLogo } from '@phosphor-icons/react/dist/ssr';
+import type { Metadata } from 'next';
+import { Geist, Instrument_Serif, JetBrains_Mono } from 'next/font/google';
+import Link from 'next/link';
 import './globals.css';
 
 const display = Instrument_Serif({
@@ -55,7 +57,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: 'Meathill', url: 'https://meathill.com' }],
   creator: 'Meathill',
-  publisher: 'MuiAD',
+  publisher: 'Meathill Studio',
   alternates: {
     canonical: '/',
   },
@@ -91,22 +93,18 @@ export const metadata: Metadata = {
 
 const jsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'WebSite',
-  name: 'MuiAD',
-  description: DESCRIPTION,
-  url: SITE_URL,
-  inLanguage: ['zh-CN', 'en-US'],
-  sameAs: ['https://github.com/meathill/mui-ad'],
-  publisher: {
-    '@type': 'Organization',
-    name: 'MuiAD',
-    url: SITE_URL,
-    founder: {
-      '@type': 'Person',
-      name: 'Meathill',
-      url: 'https://meathill.com',
+  '@graph': [
+    getOrganizationJsonLd(),
+    {
+      '@type': 'WebSite',
+      name: 'MuiAD',
+      description: DESCRIPTION,
+      url: SITE_URL,
+      inLanguage: ['zh-CN', 'en-US'],
+      sameAs: ['https://github.com/meathill/mui-ad'],
+      publisher: { '@id': brandCatalog.organization.id },
     },
-  },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -118,12 +116,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD metadata
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <header className="border-b border-rule/60">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-            <Link href="/" className="flex items-baseline gap-2">
-              <span className="font-serif text-2xl tracking-tight">MuiAD</span>
-              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-soft">v1 · public beta</span>
-            </Link>
+        <BrandHeader
+          currentSiteId="muiad"
+          locale="zh"
+          productName="MuiAD"
+          productUrl={SITE_URL}
+          actions={
             <nav className="flex items-center gap-5 text-sm">
               <a
                 href="https://github.com/meathill/mui-ad"
@@ -141,17 +139,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 加入 Waitlist
               </Link>
             </nav>
-          </div>
-        </header>
+          }
+        />
 
         <main>{children}</main>
 
-        <footer className="mt-24 border-t border-rule/60">
-          <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-10 text-sm text-ink-soft md:flex-row md:items-baseline md:justify-between">
-            <p className="font-serif text-base italic">MuiAD — decentralized, AI-driven dev marketing.</p>
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em]">built on Cloudflare · MCP-first</p>
+        <BrandFooter
+          className="mt-24"
+          currentSiteId="muiad"
+          description="MuiAD — decentralized, AI-driven dev marketing."
+          locale="zh"
+        >
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 font-mono text-[12px] uppercase tracking-[0.18em]">
+            <span>built on Cloudflare · MCP-first</span>
           </div>
-        </footer>
+        </BrandFooter>
       </body>
     </html>
   );

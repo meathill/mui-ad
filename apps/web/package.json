@@ -16,6 +16,8 @@
   "dependencies": {
     "@opennextjs/cloudflare": "^1.19.1",
     "@phosphor-icons/react": "^2.1.10",
+    "meathill-brand": "^0.1.0",
+    "meathill-brand-react": "^0.1.0",
     "next": "^16.2.3",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",

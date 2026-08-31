@@ -78,6 +78,12 @@ importers:
       '@phosphor-icons/react':
         specifier: ^2.1.10
         version: 2.1.10(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      meathill-brand:
+        specifier: ^0.1.0
+        version: 0.1.0
+      meathill-brand-react:
+        specifier: ^0.1.0
+        version: 0.1.0(meathill-brand@0.1.0)(react@19.2.5)
       next:
         specifier: ^16.2.3
         version: 16.2.3(@opentelemetry/api@1.9.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -3228,6 +3234,15 @@ packages:
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
+
+  meathill-brand-react@0.1.0:
+    resolution: {integrity: sha512-VWLUT5z3M3cXjRKNv5vHHOgAmBmfo9gjFceYLSK5APYgGC0ckHtgrfhT5o5HwbISkscjtbv45fSLEHaTp4O7rg==}
+    peerDependencies:
+      meathill-brand: ^0.1.0
+      react: '>=18'
+
+  meathill-brand@0.1.0:
+    resolution: {integrity: sha512-ua09wnW8UeGtmkFESdPse6xnjq2Ixny4Qjlobp+nTUk9CBigx+Jb0Bp0xk58MxVlstDAeErGqi6GAl7+9kOpuw==}
 
   media-typer@1.1.0:
     resolution: {integrity: sha512-aisnrDP4GNe06UcKFnV5bfMNPBUw4jsLGaWwWfnH3v02GnBuXX2MCVn5RbrWo0j3pczUilYblq7fQ7Nw2t5XKw==}
@@ -6969,6 +6984,13 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.5.5
 
   math-intrinsics@1.1.0: {}
+
+  meathill-brand-react@0.1.0(meathill-brand@0.1.0)(react@19.2.5):
+    dependencies:
+      meathill-brand: 0.1.0
+      react: 19.2.5
+
+  meathill-brand@0.1.0: {}
 
   media-typer@1.1.0: {}
 
