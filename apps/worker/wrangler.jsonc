@@ -6,7 +6,7 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "account_id": "fdc63eeea83ae8f5234357308b9a638b",
   "observability": {
-    "enabled": true
+    "enabled": false
   },
   "d1_databases": [
     {

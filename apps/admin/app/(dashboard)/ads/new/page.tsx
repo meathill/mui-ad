@@ -92,6 +92,7 @@ export default function NewAdPage() {
     return (
       <div className="max-w-2xl">
         <Link
+          prefetch={false}
           href="/ads"
           className="mb-6 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-soft hover:text-ink"
         >
@@ -100,6 +101,7 @@ export default function NewAdPage() {
         <h1 className="font-serif text-4xl tracking-tight">需要先登记产品</h1>
         <p className="mt-4 text-ink-soft">广告必须挂在一个产品下。先去登记产品再回来。</p>
         <Link
+          prefetch={false}
           href="/products/new"
           className="mt-6 inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 font-mono text-[12px] uppercase tracking-[0.18em] text-paper transition-colors hover:bg-ember-deep"
         >
@@ -112,6 +114,7 @@ export default function NewAdPage() {
   return (
     <div className="max-w-2xl">
       <Link
+        prefetch={false}
         href="/ads"
         className="mb-6 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-soft hover:text-ink"
       >
@@ -206,7 +209,7 @@ export default function NewAdPage() {
           {zones.length === 0 ? (
             <p className="rounded-md border border-rule/60 p-4 text-sm text-ink-soft">
               还没有可用广告位（active 状态）。先去{' '}
-              <Link href="/zones/new" className="underline">
+              <Link prefetch={false} href="/zones/new" className="underline">
                 创建一个
               </Link>
               。
@@ -249,6 +252,7 @@ export default function NewAdPage() {
             {submitting ? '创建中…' : '创建广告'}
           </button>
           <Link
+            prefetch={false}
             href="/ads"
             className="inline-flex items-center rounded-full border border-rule px-6 py-3 font-mono text-[12px] uppercase tracking-[0.18em] text-ink-soft hover:border-ink hover:text-ink"
           >

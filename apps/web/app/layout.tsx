@@ -133,6 +133,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <span>GitHub</span>
               </a>
               <Link
+                prefetch={false}
                 href="#waitlist"
                 className="rounded-full bg-ink px-4 py-1.5 font-mono text-[12px] uppercase tracking-[0.14em] text-paper transition-colors hover:bg-ember-deep"
               >
@@ -152,6 +153,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 font-mono text-[12px] uppercase tracking-[0.18em]">
             <span>built on Cloudflare · MCP-first</span>
+            <a
+              href="https://firstlook.tools"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="transition-colors hover:text-ink"
+            >
+              Featured on First Look
+            </a>
           </div>
         </BrandFooter>
       </body>

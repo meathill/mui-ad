@@ -53,6 +53,7 @@ export default function AdsPage() {
           <h1 className="mt-3 font-serif text-4xl tracking-tight">广告</h1>
         </div>
         <Link
+          prefetch={false}
           href="/ads/new"
           className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.18em] text-paper transition-colors hover:bg-ember-deep"
         >
@@ -70,6 +71,7 @@ export default function AdsPage() {
             <p className="font-serif text-xl text-ink">还没有广告</p>
             <p className="mt-2 text-sm text-ink-soft">先登记产品，然后基于产品创建广告。</p>
             <Link
+              prefetch={false}
               href="/ads/new"
               className="mt-6 inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.18em] text-paper transition-colors hover:bg-ember-deep"
             >
@@ -91,7 +93,11 @@ export default function AdsPage() {
               {ads.map((a) => (
                 <tr key={a.id} className="border-b border-rule/40 last:border-0">
                   <td className="px-5 py-4">
-                    <Link href={`/ads/${a.id}/edit`} className="group/name block hover:text-ember-deep">
+                    <Link
+                      prefetch={false}
+                      href={`/ads/${a.id}/edit`}
+                      className="group/name block hover:text-ember-deep"
+                    >
                       <div className="font-medium underline-offset-4 group-hover/name:underline">{a.title}</div>
                       <div className="font-mono text-[10px] text-ink-soft/70">{a.id}</div>
                     </Link>
@@ -120,6 +126,7 @@ export default function AdsPage() {
                         )}
                       </button>
                       <Link
+                        prefetch={false}
                         href={`/ads/${a.id}/edit`}
                         className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs text-ink-soft hover:bg-rule/40 hover:text-ink"
                       >

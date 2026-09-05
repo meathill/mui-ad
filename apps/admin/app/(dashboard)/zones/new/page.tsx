@@ -60,6 +60,7 @@ export default function NewZonePage() {
   return (
     <div className="max-w-2xl">
       <Link
+        prefetch={false}
         href="/zones"
         className="mb-6 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-soft hover:text-ink"
       >
@@ -183,6 +184,7 @@ export default function NewZonePage() {
             {submitting ? '创建中…' : '创建广告位'}
           </button>
           <Link
+            prefetch={false}
             href="/zones"
             className="inline-flex items-center rounded-full border border-rule px-6 py-3 font-mono text-[12px] uppercase tracking-[0.18em] text-ink-soft hover:border-ink hover:text-ink"
           >

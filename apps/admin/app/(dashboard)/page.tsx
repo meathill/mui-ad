@@ -103,7 +103,7 @@ function StatCard({
   const base = 'flex flex-col gap-2 rounded-2xl border border-rule/60 bg-paper p-6';
   if (href) {
     return (
-      <Link href={href} className={`group ${base} transition-colors hover:border-ember/60`}>
+      <Link prefetch={false} href={href} className={`group ${base} transition-colors hover:border-ember/60`}>
         {content}
       </Link>
     );
@@ -114,6 +114,7 @@ function StatCard({
 function ActionCard({ href, title, hint }: { href: string; title: string; hint: string }) {
   return (
     <Link
+      prefetch={false}
       href={href}
       className="group flex flex-col gap-2 rounded-2xl border border-rule/60 bg-paper-deep/50 p-5 transition-colors hover:border-ember/60"
     >

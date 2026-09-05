@@ -73,6 +73,7 @@ export default function ZoneStatsPage() {
           </p>
         </div>
         <Link
+          prefetch={false}
           href={`/zones/${id}/edit`}
           className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-soft hover:text-ink"
         >
@@ -174,7 +175,11 @@ export default function ZoneStatsPage() {
                 {breakdown.conversions.map((r) => (
                   <tr key={r.adId} className="border-b border-rule/40 last:border-0">
                     <td className="px-5 py-3">
-                      <Link href={`/ads/${r.adId}/edit`} className="hover:text-ember-deep hover:underline">
+                      <Link
+                        prefetch={false}
+                        href={`/ads/${r.adId}/edit`}
+                        className="hover:text-ember-deep hover:underline"
+                      >
                         {adIndex.get(r.adId)?.title ?? r.adId}
                       </Link>
                     </td>
@@ -196,6 +201,7 @@ export default function ZoneStatsPage() {
 function BackLink() {
   return (
     <Link
+      prefetch={false}
       href="/zones"
       className="inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-soft hover:text-ink"
     >

@@ -57,6 +57,7 @@ export default function SignupPage() {
         <p className="mt-5 text-ink-soft">账号由节点管理员创建后发给你，拿到凭据后直接登录，进去先改密码。</p>
         <div className="mt-10">
           <Link
+            prefetch={false}
             href="/login"
             className="inline-flex items-center gap-2 rounded-full bg-ink px-6 py-3 font-mono text-[12px] uppercase tracking-[0.18em] text-paper transition-colors hover:bg-ember-deep"
           >

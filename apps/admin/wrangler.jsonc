@@ -7,7 +7,7 @@
   "account_id": "fdc63eeea83ae8f5234357308b9a638b",
   "routes": [{ "pattern": "admin.muiad.meathill.com", "custom_domain": true }],
   "observability": {
-    "enabled": true
+    "enabled": false
   },
   "assets": {
     "directory": ".open-next/assets",

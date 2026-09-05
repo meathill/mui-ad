@@ -35,6 +35,7 @@ export default function ProductsPage() {
           <h1 className="mt-3 font-serif text-4xl tracking-tight">产品</h1>
         </div>
         <Link
+          prefetch={false}
           href="/products/new"
           className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.18em] text-paper transition-colors hover:bg-ember-deep"
         >
@@ -52,6 +53,7 @@ export default function ProductsPage() {
             <p className="font-serif text-xl text-ink">还没有登记产品</p>
             <p className="mt-2 text-sm text-ink-soft">先登记一个产品，用来挂广告。</p>
             <Link
+              prefetch={false}
               href="/products/new"
               className="mt-6 inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 font-mono text-[11px] uppercase tracking-[0.18em] text-paper transition-colors hover:bg-ember-deep"
             >
@@ -72,7 +74,11 @@ export default function ProductsPage() {
               {products.map((p) => (
                 <tr key={p.id} className="border-b border-rule/40 last:border-0">
                   <td className="px-5 py-4">
-                    <Link href={`/products/${p.id}/edit`} className="group/name block hover:text-ember-deep">
+                    <Link
+                      prefetch={false}
+                      href={`/products/${p.id}/edit`}
+                      className="group/name block hover:text-ember-deep"
+                    >
                       <div className="font-medium underline-offset-4 group-hover/name:underline">{p.name}</div>
                       <div className="font-mono text-[10px] text-ink-soft/70">{p.id}</div>
                     </Link>
@@ -87,6 +93,7 @@ export default function ProductsPage() {
                   </td>
                   <td className="px-5 py-4 text-right">
                     <Link
+                      prefetch={false}
                       href={`/products/${p.id}/edit`}
                       className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs text-ink-soft hover:bg-rule/40 hover:text-ink"
                     >

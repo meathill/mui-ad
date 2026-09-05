@@ -39,7 +39,7 @@ export default function Sidebar() {
 
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-rule/60 bg-paper-deep/40 px-5 py-7">
-      <Link href="/" className="flex items-baseline gap-2">
+      <Link prefetch={false} href="/" className="flex items-baseline gap-2">
         <span className="font-serif text-2xl tracking-tight">MuiAD</span>
         <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft">admin</span>
       </Link>
@@ -50,6 +50,7 @@ export default function Sidebar() {
           const Icon = item.icon;
           return (
             <Link
+              prefetch={false}
               key={item.href}
               href={item.href}
               className={`flex items-center gap-2.5 rounded-md px-3 py-2 transition-colors ${

@@ -48,7 +48,7 @@ describe('ads repository', () => {
       status: 'active',
       createdAt: new Date().toISOString(),
     });
-    await ads.attachToZones(db, ad.id, [zoneA.id, zoneB.id], 2);
+    await ads.attachToZones(db, ad.id, [zoneA.id, zoneB.id], { weight: 2, advertiserId: null });
 
     const aList = await ads.listActiveByZone(db, zoneA.id);
     expect(aList).toHaveLength(1);
@@ -96,7 +96,7 @@ describe('ads repository', () => {
       status: 'active',
       createdAt: new Date().toISOString(),
     });
-    await ads.attachToZones(db, ad.id, [zoneA.id, zoneB.id], 3);
+    await ads.attachToZones(db, ad.id, [zoneA.id, zoneB.id], { weight: 3, advertiserId: null });
     const rows = await ads.listZonesOf(db, ad.id);
     expect(rows.map((r) => r.zoneId).sort()).toEqual([zoneA.id, zoneB.id].sort());
     expect(rows.every((r) => r.weight === 3)).toBe(true);

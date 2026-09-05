@@ -76,6 +76,7 @@ export default function LoginPage() {
             {submitting ? '正在登录…' : '登录'}
           </button>
           <Link
+            prefetch={false}
             href="/signup"
             className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink-soft hover:text-ember-deep"
           >
@@ -85,7 +86,7 @@ export default function LoginPage() {
       </form>
 
       <p className="mt-12 border-t border-rule/60 pt-6 font-mono text-[11px] uppercase tracking-[0.2em] text-ink-soft">
-        <Link href="/setup" className="hover:text-ember-deep">
+        <Link prefetch={false} href="/setup" className="hover:text-ember-deep">
           我是站长？用密钥进入 →
         </Link>
       </p>
