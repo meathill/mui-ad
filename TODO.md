@@ -1,42 +1,9 @@
 # TODO - MuiAD 长期计划
 
-> 最后更新：2026-04-14
-
-## MVP 路径
-
-```
-MVP-0  单实例广告投放 + MCP + 广告渲染        ← 当前
-MVP-1  归因追踪 + 数据统计
-MVP-2  AI Agent（扫描 + 生成物料 + 自动投放）
-MVP-3  节点间通信 + 网络发现
-MVP-4  积分系统 + 公共节点
-```
-
-## MVP-1：归因追踪 + 数据统计
-
-在 MVP-0 基础上增加转化追踪能力。
-
-- 广告链接带归因参数（ref、campaign、creative）
-- 支持 Postback URL / Webhook / JS Pixel 回传转化事件
-- Last-click 归因，归因窗口可配置
-- 基础数据统计 API（按时间、产品、广告位维度）
-
-交付标准：能追踪从广告点击到注册/下载/付费的完整链路。
-
-## MVP-2：AI Agent
-
-在 MVP-1 基础上增加 AI 自动推广能力。
-
-- 扫描可用广告位，分析匹配度
-- 调用外部 LLM API 生成 banner 图和文案（多版本 A/B）
-- 自动提交到目标广告位
-- 持续监控效果，自动优化投放策略
-
-交付标准：用户说一句话，AI 自动完成从扫描到投放的全流程。
+> 长期待办，只记还没做的事。已上线的历史见 README Roadmap 与 git log。
+> 最后更新：2026-09-06（维护轮清理：MVP-0/1/2 已上线内容移出，只留 MVP-3/4 与开放问题）
 
 ## MVP-3：节点间通信 + 网络发现
-
-在 MVP-2 基础上增加去中心化网络能力。
 
 - 节点发现（公共注册节点 / 手动添加）
 - 节点间 REST API 直传广告数据
@@ -47,17 +14,25 @@ MVP-4  积分系统 + 公共节点
 
 ## MVP-4：积分系统 + 公共节点
 
-在 MVP-3 基础上增加积分经济。
-
 - 流量互换、CPA 付费、Rev Share、积分转账
 - 部署 all-mui-ad 公共节点
 - 积分在节点间流通
 
 交付标准：积分能在节点间流通，推广效果能通过积分量化。
 
+## 待办（按优先级）
+
+- [ ] waitlist 速率限制（IP / 时间窗 middleware，或 Turnstile）
+- [ ] `warm` 模式 trust decay（当前只看有无 active 挂载，spam 混入后永久 warm；考虑加"最近 7 天没被驳过"条件）
+- [ ] per-user Workers AI 用量配额（免费额度全 worker 共享，防大图片刷量）
+- [ ] Workers AI 审核 prompt V2（等真实误判案例再迭代，可考虑争议样本留档表）
+- [ ] SDK：前端嵌入 SDK（React / Vue / Vanilla）
+- [ ] 防作弊：异常检测 + 声誉系统
+- [ ] 自定义域名 `muiad.dev` 接入（待 DNS 迁至 CF）
+
 ## 开放问题
 
 - [ ] MCP transport 选型：SSE vs Streamable HTTP
-- [ ] AI 物料生成的 LLM API 选型
+- [ ] AI 物料生成的 LLM API 选型（当前 BYOK：OpenAI gpt-image-2 / Gemini）
 - [ ] 节点间通信的认证机制
 - [ ] 积分的"锚定"问题

@@ -4,14 +4,15 @@ import { Copy, PencilSimple, Pause, Play, Plus } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import type { Zone, ZoneStats } from '@muiad/db';
-import { apiFromConfig } from '@/lib/api';
-import { useConfig } from '@/lib/store';
+import { ErrorBanner, Loading } from '@/components/ui/error-banner';
+import { StatusPill } from '@/components/ui/status-pill';
+import { errMsg, formatCtr, formatHost } from '@/lib/format';
+import { useApi } from '@/lib/use-api';
 
 type StatsMap = Record<string, ZoneStats>;
 
 export default function ZonesPage() {
-  const workerUrl = useConfig((s) => s.workerUrl);
-  const apiKey = useConfig((s) => s.apiKey);
+  const api = useApi();
   const [zones, setZones] = useState<Zone[] | null>(null);
   const [stats, setStats] = useState<StatsMap>({});
   const [error, setError] = useState('');
@@ -19,8 +20,6 @@ export default function ZonesPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     try {
       const rows = await api.zones.list();
       setZones(rows);
@@ -32,32 +31,28 @@ export default function ZonesPage() {
       for (const [id, s] of entries) if (s) next[id] = s;
       setStats(next);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errMsg(e));
     }
-  }, [workerUrl, apiKey]);
+  }, [api]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   async function toggleStatus(zone: Zone) {
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     setBusyId(zone.id);
     try {
       const next = zone.status === 'active' ? 'paused' : 'active';
       await api.zones.setStatus(zone.id, next);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errMsg(e));
     } finally {
       setBusyId(null);
     }
   }
 
   async function copyEmbed(id: string) {
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     const { embedCode } = await api.zones.get(id);
     await navigator.clipboard.writeText(embedCode);
     setCopiedId(id);
@@ -80,7 +75,7 @@ export default function ZonesPage() {
         </Link>
       </div>
 
-      {error && <p className="mt-6 rounded-md bg-ember/10 px-4 py-3 font-mono text-xs text-ember-deep">{error}</p>}
+      <ErrorBanner message={error} className="mt-6" />
 
       <div className="mt-8 overflow-hidden rounded-xl border border-rule/60">
         {zones === null ? (
@@ -116,7 +111,7 @@ export default function ZonesPage() {
                     {z.width} × {z.height}
                   </td>
                   <td className="px-5 py-4 truncate text-ink-soft" title={z.siteUrl}>
-                    {z.siteUrl.replace(/^https?:\/\//, '')}
+                    {formatHost(z.siteUrl)}
                   </td>
                   <td className="px-5 py-4">
                     <StatusPill status={z.status} />
@@ -182,7 +177,7 @@ function StatsCell({ s }: { s: ZoneStats | undefined }) {
   if (s.impressions === 0) {
     return <span className="font-mono text-[11px] text-ink-soft/60">无数据</span>;
   }
-  const ctrPct = (s.ctr * 100).toFixed(1);
+  const ctrPct = formatCtr(s.ctr);
   return (
     <div className="flex items-baseline gap-2 font-mono text-[12px]">
       <span className="text-ink">{s.impressions}</span>
@@ -190,27 +185,13 @@ function StatsCell({ s }: { s: ZoneStats | undefined }) {
       <span className="text-ink-soft/40">·</span>
       <span className="text-ink">{s.clicks}</span>
       <span className="text-ink-soft/50">点击</span>
-      <span className="text-ember-deep">({ctrPct}%)</span>
+      <span className="text-ember-deep">({ctrPct})</span>
     </div>
   );
 }
 
-function StatusPill({ status }: { status: string }) {
-  const isActive = status === 'active';
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] ${
-        isActive ? 'bg-grass/15 text-grass-deep' : 'bg-rule/60 text-ink-soft'
-      }`}
-    >
-      <span className={`size-1.5 rounded-full ${isActive ? 'bg-grass' : 'bg-ink-soft/40'}`} />
-      {status}
-    </span>
-  );
-}
-
 function Skeleton() {
-  return <div className="p-10 text-center font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">加载中…</div>;
+  return <Loading className="p-10" />;
 }
 
 function Empty() {

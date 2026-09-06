@@ -77,7 +77,7 @@ AI Agent 会自动完成以下全部流程：
 
 你不需要做任何手动操作。你甚至不需要打开 MuiAD 的 Dashboard。
 
-### 当前 12 个 MCP tool（MVP-2 已落地）
+### 当前 13 个 MCP tool（MVP-2 已落地）
 
 ```
 发布方（zone 所有者）
@@ -89,6 +89,7 @@ AI Agent 会自动完成以下全部流程：
 广告主
   muiad_scan_zones                跨节点扫描所有 active 广告位（市场视图）
   muiad_register_product          登记要推广的产品
+  muiad_upload_asset              上传 banner 图到自托管 R2，返回公网 URL
   muiad_create_ad                 创建广告，一次性挂到多个 zone
   muiad_list_ads                  列出自己的广告
   muiad_set_ad_status             暂停 / 恢复自己的广告
@@ -319,7 +320,7 @@ Cloudflare 资源
 Worker (apps/worker)
 ├── /auth/*            better-auth handler（session cookie 跨子域）
 ├── /api/{products,zones,ads,stats,ai-generations,api-keys,settings,approvals,admin}
-├── /mcp               MCP Server（JSON-RPC 2.0，12 个 tool）
+├── /mcp               MCP Server（JSON-RPC 2.0，13 个 tool）
 ├── /serve             /serve?zone=<id> 给 widget 拉广告
 ├── /track/{click,conversion}
 ├── /widget.js         嵌入脚本
@@ -365,7 +366,7 @@ mui-ad/
 │           ├── modules/ad-server/   # 加权随机投放
 │           ├── mcp/
 │           │   ├── server.ts        # JSON-RPC dispatcher
-│           │   └── tools/           # 12 个 muiad_* 一个文件
+│           │   └── tools/           # 13 个 muiad_* 一个文件
 │           └── routes/
 │               ├── api/             # 9 个子 router
 │               ├── serve.ts /track.ts /widget.ts /uploads.ts /files.ts
@@ -379,7 +380,6 @@ mui-ad/
 │       └── tests/
 ├── docs/
 │   └── AGENT_GUIDE.md       # Agent 使用指南：tool 清单 + prompt 范式
-├── TECH_SPEC.md
 ├── DEPLOYMENT.md
 ├── DEV_NOTE.md
 └── README.md

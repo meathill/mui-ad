@@ -4,31 +4,31 @@ import { ArrowLeft } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Field, inputClass, inputMonoClass } from '@/components/ui/field';
-import { apiFromConfig } from '@/lib/api';
-import { useConfig } from '@/lib/store';
+import { ProductFields, type ProductFieldValues } from '@/components/product-form';
+import { ErrorBanner } from '@/components/ui/error-banner';
+import { errMsg } from '@/lib/format';
+import { useApi } from '@/lib/use-api';
 
 export default function NewProductPage() {
   const router = useRouter();
-  const workerUrl = useConfig((s) => s.workerUrl);
-  const apiKey = useConfig((s) => s.apiKey);
-  const [name, setName] = useState('');
-  const [url, setUrl] = useState('');
-  const [description, setDescription] = useState('');
+  const api = useApi();
+  const [values, setValues] = useState<ProductFieldValues>({ name: '', url: '', description: '' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  function patch(p: Partial<ProductFieldValues>) {
+    setValues((v) => ({ ...v, ...p }));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     setSubmitting(true);
     setError('');
     try {
-      await api.products.create({ name, url, description: description || undefined });
+      await api.products.create({ name: values.name, url: values.url, description: values.description || undefined });
       router.replace('/products');
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errMsg(e));
       setSubmitting(false);
     }
   }
@@ -46,31 +46,14 @@ export default function NewProductPage() {
       <p className="mt-3 text-ink-soft">把要推广的东西登记进来。之后创建广告时从产品列表里选。</p>
 
       <form onSubmit={handleSubmit} className="mt-10 space-y-6">
-        <Field label="名称" hint="给人看的产品名，比如 &lsquo;foo-cli&rsquo;">
-          <input required value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
-        </Field>
+        <ProductFields
+          values={values}
+          onPatch={patch}
+          nameHint="给人看的产品名，比如 ‘foo-cli’"
+          descHint="可选。AI 生成广告文案时作为 context"
+        />
 
-        <Field label="产品 URL">
-          <input
-            required
-            type="url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://foo.dev"
-            className={inputMonoClass}
-          />
-        </Field>
-
-        <Field label="描述" hint="可选。AI 生成广告文案时作为 context">
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={4}
-            className={`${inputClass} resize-none`}
-          />
-        </Field>
-
-        {error && <p className="rounded-md bg-ember/10 px-4 py-3 font-mono text-xs text-ember-deep">{error}</p>}
+        <ErrorBanner message={error} />
 
         <div className="flex gap-3 pt-2">
           <button

@@ -2,7 +2,7 @@
 
 MVP-0（landing / worker / admin）+ 用户体系 Phase A–D + MVP-2 AI Agent
 （跨用户投放市场 + 4 档审批模式 + Workers AI 文本/图片审核 + 完整反馈闭环
-12 个 MCP tool）都已上线。Agent 使用方式见 [AGENT_GUIDE.md](./docs/AGENT_GUIDE.md)。
+13 个 MCP tool）都已上线。Agent 使用方式见 [AGENT_GUIDE.md](./docs/AGENT_GUIDE.md)。
 
 ## 线上地址
 

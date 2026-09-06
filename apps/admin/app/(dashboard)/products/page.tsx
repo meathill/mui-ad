@@ -4,24 +4,22 @@ import { PencilSimple, Plus } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import type { Product } from '@muiad/db';
-import { apiFromConfig } from '@/lib/api';
-import { useConfig } from '@/lib/store';
+import { ErrorBanner, Loading } from '@/components/ui/error-banner';
+import { errMsg, formatHost } from '@/lib/format';
+import { useApi } from '@/lib/use-api';
 
 export default function ProductsPage() {
-  const workerUrl = useConfig((s) => s.workerUrl);
-  const apiKey = useConfig((s) => s.apiKey);
+  const api = useApi();
   const [products, setProducts] = useState<Product[] | null>(null);
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     try {
       setProducts(await api.products.list());
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errMsg(e));
     }
-  }, [workerUrl, apiKey]);
+  }, [api]);
 
   useEffect(() => {
     load();
@@ -43,11 +41,11 @@ export default function ProductsPage() {
         </Link>
       </div>
 
-      {error && <p className="mt-6 rounded-md bg-ember/10 px-4 py-3 font-mono text-xs text-ember-deep">{error}</p>}
+      <ErrorBanner message={error} className="mt-6" />
 
       <div className="mt-8 overflow-hidden rounded-xl border border-rule/60">
         {products === null ? (
-          <div className="p-10 text-center font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">加载中…</div>
+          <Loading className="p-10" />
         ) : products.length === 0 ? (
           <div className="p-10 text-center">
             <p className="font-serif text-xl text-ink">还没有登记产品</p>
@@ -85,7 +83,7 @@ export default function ProductsPage() {
                   </td>
                   <td className="px-5 py-4 font-mono text-[12px] text-ink-soft">
                     <a href={p.url} target="_blank" rel="noreferrer" className="hover:text-ember-deep hover:underline">
-                      {p.url.replace(/^https?:\/\//, '')}
+                      {formatHost(p.url)}
                     </a>
                   </td>
                   <td className="px-5 py-4 max-w-xs truncate text-ink-soft" title={p.description ?? ''}>

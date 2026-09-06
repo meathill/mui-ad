@@ -4,42 +4,39 @@ import { PencilSimple, Pause, Play, Plus } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import type { Ad, Product } from '@muiad/db';
-import { apiFromConfig } from '@/lib/api';
-import { useConfig } from '@/lib/store';
+import { ErrorBanner, Loading } from '@/components/ui/error-banner';
+import { StatusPill } from '@/components/ui/status-pill';
+import { errMsg } from '@/lib/format';
+import { useApi } from '@/lib/use-api';
 
 export default function AdsPage() {
-  const workerUrl = useConfig((s) => s.workerUrl);
-  const apiKey = useConfig((s) => s.apiKey);
+  const api = useApi();
   const [ads, setAds] = useState<Ad[] | null>(null);
   const [productMap, setProductMap] = useState<Map<string, Product>>(new Map());
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     try {
       const [adList, productList] = await Promise.all([api.ads.list(), api.products.list()]);
       setAds(adList);
       setProductMap(new Map(productList.map((p) => [p.id, p])));
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errMsg(e));
     }
-  }, [workerUrl, apiKey]);
+  }, [api]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   async function toggle(ad: Ad) {
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     setBusyId(ad.id);
     try {
       await api.ads.setStatus(ad.id, ad.status === 'active' ? 'paused' : 'active');
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errMsg(e));
     } finally {
       setBusyId(null);
     }
@@ -61,11 +58,11 @@ export default function AdsPage() {
         </Link>
       </div>
 
-      {error && <p className="mt-6 rounded-md bg-ember/10 px-4 py-3 font-mono text-xs text-ember-deep">{error}</p>}
+      <ErrorBanner message={error} className="mt-6" />
 
       <div className="mt-8 overflow-hidden rounded-xl border border-rule/60">
         {ads === null ? (
-          <div className="p-10 text-center font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">加载中…</div>
+          <Loading className="p-10" />
         ) : ads.length === 0 ? (
           <div className="p-10 text-center">
             <p className="font-serif text-xl text-ink">还没有广告</p>
@@ -141,19 +138,5 @@ export default function AdsPage() {
         )}
       </div>
     </div>
-  );
-}
-
-function StatusPill({ status }: { status: string }) {
-  const isActive = status === 'active';
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] ${
-        isActive ? 'bg-grass/15 text-grass-deep' : 'bg-rule/60 text-ink-soft'
-      }`}
-    >
-      <span className={`size-1.5 rounded-full ${isActive ? 'bg-grass' : 'bg-ink-soft/40'}`} />
-      {status}
-    </span>
   );
 }

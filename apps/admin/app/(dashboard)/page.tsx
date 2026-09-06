@@ -3,8 +3,9 @@
 import { ArrowRight } from '@phosphor-icons/react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { apiFromConfig } from '@/lib/api';
-import { useConfig } from '@/lib/store';
+import { ErrorBanner } from '@/components/ui/error-banner';
+import { errMsg } from '@/lib/format';
+import { useApi } from '@/lib/use-api';
 
 type Counts = {
   zones: number;
@@ -15,14 +16,11 @@ type Counts = {
 };
 
 export default function Overview() {
-  const workerUrl = useConfig((s) => s.workerUrl);
-  const apiKey = useConfig((s) => s.apiKey);
+  const api = useApi();
   const [counts, setCounts] = useState<Counts | null>(null);
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     (async () => {
       try {
         const [zones, products, ads] = await Promise.all([api.zones.list(), api.products.list(), api.ads.list()]);
@@ -39,10 +37,10 @@ export default function Overview() {
           clicks,
         });
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
+        setError(errMsg(e));
       }
     })();
-  }, [workerUrl, apiKey]);
+  }, [api]);
 
   return (
     <div>
@@ -53,9 +51,7 @@ export default function Overview() {
         现在有什么。
       </h1>
 
-      {error && (
-        <p className="mt-6 rounded-md bg-ember/10 px-4 py-3 font-mono text-xs text-ember-deep">读取数据失败：{error}</p>
-      )}
+      <ErrorBanner message={error ? `读取数据失败：${error}` : ''} className="mt-6" />
 
       <section className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
         <StatCard label="广告位" value={counts?.zones} href="/zones" />

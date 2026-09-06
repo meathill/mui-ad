@@ -12,9 +12,15 @@
   为先"的定位。better-auth 完全跑在 worker 内，数据全在你自己的 D1
 - **没有邀请码机制**：最初想做 invite table + token，和 owner 沟通后简化为"admin
   直接建号设初始密码发给用户，用户登录后 `/account` 改密码"。少一张表，交互也更直白
-- **第一个注册的人自动 admin**：在 `databaseHooks.user.create.before` 里数 user
-  表，count === 0 时写 `role: 'admin'`，其余写 `user`；之后 worker 拦
-  `/auth/sign-up/email` 在非空时直接 403。前端也根据 `/auth-meta` 隐藏 `/signup`
+- **已去掉 admin 角色，只剩 root 特权（2026-05）**：早期"第一个注册自动 admin"
+  的 hook 已删除，全员普通用户；`requireAdmin` 改为 `requireRoot`（用户管理/
+  认领孤儿仅 root key 可调）；`/users` 仅 operator 可见
+- **admin 双模式互斥（operator / tenant）**：`RequireKey + RequireSession` 两道门
+  合并为单个 `RequireAuth` + `useAuthMode()` 判定——operator（根密钥、无会话）
+  是跨租户全局视角，跳过邮箱密码；tenant（邮箱密码会话）只看自己数据；会话优先
+- **operator 隐藏按账号页面**：`/api-keys` 与 `/approvals` 是 per-user 路由，
+  operator 模式下显示 `TenantOnlyNotice` 并跳过加载，侧栏隐藏 API Keys / 待审批 /
+  我的账号；节点配置（BYOK localStorage）与概览/zones/ads/products/ai 历史仍正常
 
 ### 鉴权三路并存：session > per-user API key > MUIAD_API_KEY
 - **场景分离**：
@@ -74,6 +80,10 @@
 ### Landing page 用 OpenNext 跑在 Cloudflare Workers
 - **依据**：整个产品（Worker、MCP、Admin）都在 CF，landing 不单独起 Vercel / Netlify 降低心智成本，并且能复用同一个 D1 实例收 waitlist
 - **代价**：OpenNext 对 Next.js 新版本有延迟；每次 Next 大版本升级都要检查 `@opennextjs/cloudflare` 兼容性
+- **当前版本**：Next 16.3.4 + `@opennextjs/cloudflare` 1.20.6；`open-next.config`
+  显式 `enableCacheInterception: false`（上游 1348 修复未发布，防默认值变化）；
+  站内 Link/锚点 CTA 加 `prefetch={false}` 减 RSC 预取；三个 worker 的 observability
+  默认关闭省额度（改完重部署才生效）
 
 ### 图标库用 `@phosphor-icons/react`，不是 `phosphor-react`
 - **原因**：`phosphor-react@1.x` 在 React 19 + RSC 下会抛 `createContext is not a function`（老包是 UMD/CJS，模块顶层调 `React.createContext`，RSC 打包器不吃）
@@ -86,6 +96,25 @@
   滥用防护。DEV 历史上曾让 worker 调 OpenAI，后来完整拆掉（`9a5c154` 架构改造 step 1）
 - **扩展 provider 模式**：`apps/admin/lib/providers/{openai,google,...}.ts` 实现
   `ImageProvider` 接口；新 provider 只需加一个文件 + 注册进 `index.ts`
+- **当前模型**：OpenAI 侧 `gpt-image-2` 主力 + `gpt-image-1.5` 兼容（`gpt-image-1`
+  已下掉）；Google 侧见 `providers/google.ts` 的 models 列表
+
+### 素材托管走自有 R2，不经外部 CDN
+- **决策**：`muiad_upload_asset` MCP tool 收 data URL / 裸 base64 → `lib/assets.ts`
+  的 `storeAsset`（类型白名单 + 5MB 上限）→ R2，返回可直接当 `image_url` 的公网 URL
+- **为什么**：Agent 端到端不用碰外部 CDN；REST `/uploads` 与 MCP tool 共用同一套
+  校验与落库逻辑（`uploads.ts` 只做薄封装，校验以 `storeAsset` 为准，避免双写漂移）
+- **约束**：只限类型 + 大小，不校验图片尺寸是否贴合 zone 的 `width/height`——
+  超尺寸 banner 会被浏览器拉伸，生成时按目标 zone 尺寸做
+
+### 品牌网络用 meathill-brand 包统一跨站身份
+- **决策**：landing `layout.tsx` 用 `meathill-brand` 的 `getOrganizationJsonLd()` +
+  `meathill-brand-react` 的 `BrandHeader/BrandFooter`，旧手写 header 与 WebSite +
+  Organization JSON-LD 已删
+- **为什么**：多站点共用同一 Organization `@id`（`brandCatalog.organization.id`），
+  publisher 归一为 Meathill Studio，避免每站各写一份互相漂移
+- **代价**：版本 pin 在 `apps/web/package.json`；品牌包 breaking change 时所有站
+  一起跟，随包升级
 
 ### 归因链：impression → click → conversion 用 sid cookie 串起来
 - **`muiad_sid`** cookie（`/serve` 首次访问下发，HttpOnly/Secure/SameSite=None、30 天）
@@ -111,7 +140,8 @@
 ### 静态资源缓存：`public/_headers` + 构建期静态 OG 图
 - OpenNext 的 `createAssets` 会把 `public/*` 原样复制进 `.open-next/assets`（
   `@opennextjs/aws` 的 `fs.cpSync`），所以 Cloudflare 的 `_headers` 文件直接放
-  `public/` 即可生效，不需要改构建流程
+  `public/` 即可生效，不需要改构建流程；web 与 admin 都放了同一份（`/_next/static/*`
+  一年 immutable）
 - `/_next/static/*` 在 assets 里走 ASSETS binding，`_headers` 能命中；但 Worker
   动态响应的路由（prerender cache）不归 `_headers` 管
 - **next.config `headers()` 对 metadata image 路由不生效**：构建验证过，

@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { Ad, ConversionByAdRow, RefererRow, UtmSourceRow, Zone, ZoneStats } from '@muiad/db';
-import { apiFromConfig } from '@/lib/api';
-import { useConfig } from '@/lib/store';
+import { ErrorBanner, Loading } from '@/components/ui/error-banner';
+import { errMsg, formatCtr, formatHost } from '@/lib/format';
+import { useApi } from '@/lib/use-api';
 
 type Breakdown = {
   zoneId: string;
@@ -19,8 +20,7 @@ type Breakdown = {
 export default function ZoneStatsPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
-  const workerUrl = useConfig((s) => s.workerUrl);
-  const apiKey = useConfig((s) => s.apiKey);
+  const api = useApi();
 
   const [zone, setZone] = useState<Zone | null>(null);
   const [breakdown, setBreakdown] = useState<Breakdown | null>(null);
@@ -28,8 +28,6 @@ export default function ZoneStatsPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     (async () => {
       try {
         const [zoneDetail, brk, ads] = await Promise.all([
@@ -41,24 +39,24 @@ export default function ZoneStatsPage() {
         setBreakdown(brk);
         setAdIndex(new Map(ads.map((a) => [a.id, a])));
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
+        setError(errMsg(e));
       }
     })();
-  }, [workerUrl, apiKey, id]);
+  }, [api, id]);
 
   if (error) {
     return (
       <div className="max-w-3xl">
         <BackLink />
-        <p className="mt-4 rounded-md bg-ember/10 px-4 py-3 font-mono text-xs text-ember-deep">{error}</p>
+        <ErrorBanner message={error} className="mt-4" />
       </div>
     );
   }
   if (!zone || !breakdown) {
-    return <div className="text-center font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">加载中…</div>;
+    return <Loading />;
   }
 
-  const ctrPct = (breakdown.totals.ctr * 100).toFixed(2);
+  const ctrPct = formatCtr(breakdown.totals.ctr, 2);
   const totalUtm = breakdown.utmSources.reduce((s, r) => s + r.count, 0) || 1;
 
   return (
@@ -88,7 +86,7 @@ export default function ZoneStatsPage() {
           sublabel={`${breakdown.totals.uniqueViewers} 独立`}
         />
         <BigStat label="点击" value={breakdown.totals.clicks} sublabel={`${breakdown.totals.uniqueClickers} 独立`} />
-        <BigStat label="CTR" value={`${ctrPct}%`} accent />
+        <BigStat label="CTR" value={ctrPct} accent />
       </section>
 
       <section className="mt-14">
@@ -148,7 +146,7 @@ export default function ZoneStatsPage() {
                 className="flex items-baseline justify-between gap-4 rounded-lg border border-rule/60 px-4 py-2.5"
               >
                 <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-ink-soft" title={r.referer ?? ''}>
-                  {r.referer ? r.referer.replace(/^https?:\/\//, '') : <span>（无 referer）</span>}
+                  {r.referer ? formatHost(r.referer) : <span>（无 referer）</span>}
                 </span>
                 <span className="font-mono text-[12px] text-ink">{r.count}</span>
               </li>

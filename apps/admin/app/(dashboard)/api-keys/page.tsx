@@ -5,15 +5,15 @@ import { useCallback, useEffect, useState } from 'react';
 import type { ApiKeyPublic } from '@muiad/db';
 import TenantOnlyNotice from '@/components/tenant-only-notice';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { ErrorBanner, Loading } from '@/components/ui/error-banner';
 import { Field, inputClass } from '@/components/ui/field';
-import { apiFromConfig } from '@/lib/api';
-import { useConfig } from '@/lib/store';
+import { errMsg, formatDateTime } from '@/lib/format';
+import { useApi } from '@/lib/use-api';
 import { useAuthMode } from '@/lib/use-auth-mode';
 
 export default function ApiKeysPage() {
   const { isOperator } = useAuthMode();
-  const workerUrl = useConfig((s) => s.workerUrl);
-  const apiKey = useConfig((s) => s.apiKey);
+  const api = useApi();
   const [keys, setKeys] = useState<ApiKeyPublic[] | null>(null);
   const [error, setError] = useState('');
   const [newName, setNewName] = useState('');
@@ -23,14 +23,12 @@ export default function ApiKeysPage() {
   const [copied, setCopied] = useState(false);
 
   const load = useCallback(async () => {
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     try {
       setKeys(await api.apiKeys.list());
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errMsg(e));
     }
-  }, [workerUrl, apiKey]);
+  }, [api]);
 
   useEffect(() => {
     // operator（root key）没有个人账号，/api/api-keys 会 401；跳过。
@@ -39,8 +37,6 @@ export default function ApiKeysPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     setError('');
     setSubmitting(true);
     try {
@@ -49,7 +45,7 @@ export default function ApiKeysPage() {
       setNewName('');
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errMsg(e));
     } finally {
       setSubmitting(false);
     }
@@ -57,14 +53,12 @@ export default function ApiKeysPage() {
 
   async function confirmRevoke() {
     if (!revokeId) return;
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     try {
       await api.apiKeys.revoke(revokeId);
       setRevokeId(null);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errMsg(e));
       throw e;
     }
   }
@@ -96,7 +90,7 @@ export default function ApiKeysPage() {
         用来从 MCP / CI / 脚本调你自己的 API。生成的 key 只显示一次——关闭对话框后就再也看不到了。丢了就撤销重发。
       </p>
 
-      {error && <p className="mt-6 rounded-md bg-ember/10 px-4 py-3 font-mono text-xs text-ember-deep">{error}</p>}
+      <ErrorBanner message={error} className="mt-6" />
 
       {freshlyCreated && (
         <section className="mt-8 rounded-xl border-2 border-ember/50 bg-ember/5 p-6">
@@ -148,7 +142,7 @@ export default function ApiKeysPage() {
       <section className="mt-10">
         <h2 className="font-serif text-xl tracking-tight">现有 key</h2>
         {keys === null ? (
-          <p className="mt-4 font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">加载中…</p>
+          <Loading className="mt-4" />
         ) : active.length === 0 ? (
           <p className="mt-4 rounded-md border border-rule/60 bg-paper-deep/20 p-6 text-sm text-ink-soft">
             还没生成过 API key。
@@ -160,8 +154,7 @@ export default function ApiKeysPage() {
                 <div className="min-w-0">
                   <div className="font-serif text-lg">{k.name}</div>
                   <div className="font-mono text-[11px] text-ink-soft">
-                    {k.prefix}…
-                    {k.lastUsedAt ? ` · 最近使用 ${new Date(k.lastUsedAt).toLocaleString('zh-CN')}` : ' · 从未使用'}
+                    {k.prefix}…{k.lastUsedAt ? ` · 最近使用 ${formatDateTime(k.lastUsedAt)}` : ' · 从未使用'}
                   </div>
                 </div>
                 <button
@@ -187,7 +180,7 @@ export default function ApiKeysPage() {
                 <div className="min-w-0">
                   <div className="truncate text-sm">{k.name}</div>
                   <div className="font-mono text-[10px] text-ink-soft">
-                    {k.prefix}… · 撤销于 {k.revokedAt ? new Date(k.revokedAt).toLocaleString('zh-CN') : '—'}
+                    {k.prefix}… · 撤销于 {k.revokedAt ? formatDateTime(k.revokedAt) : '—'}
                   </div>
                 </div>
               </li>

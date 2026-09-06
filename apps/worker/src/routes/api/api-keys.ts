@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { apiKeys, createDb } from '@muiad/db';
 import type { HonoEnv } from '../../env';
+import { sessionRequired } from '../../lib/http';
 import { sha256Hex } from '../../lib/hash';
 
 const app = new Hono<HonoEnv>();
@@ -9,7 +10,7 @@ const app = new Hono<HonoEnv>();
 
 app.get('/', async (c) => {
   const user = c.var.user;
-  if (!user) return c.json({ error: 'Session required' }, 401);
+  if (!user) return sessionRequired(c);
   const db = createDb(c.env.DB);
   const rows = await apiKeys.listForUser(db, user.id);
   return c.json({ keys: rows });
@@ -17,7 +18,7 @@ app.get('/', async (c) => {
 
 app.post('/', async (c) => {
   const user = c.var.user;
-  if (!user) return c.json({ error: 'Session required' }, 401);
+  if (!user) return sessionRequired(c);
   const body = (await c.req.json().catch(() => ({}))) as { name?: string };
   const name = body.name?.trim() || 'Untitled key';
 
@@ -44,7 +45,7 @@ app.post('/', async (c) => {
 
 app.delete('/:id', async (c) => {
   const user = c.var.user;
-  if (!user) return c.json({ error: 'Session required' }, 401);
+  if (!user) return sessionRequired(c);
   const db = createDb(c.env.DB);
   await apiKeys.revoke(db, c.req.param('id'), user.id);
   return c.body(null, 204);

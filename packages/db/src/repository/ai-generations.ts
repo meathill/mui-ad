@@ -1,6 +1,7 @@
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import type { Db } from '../db';
 import { aiGenerations } from '../schema';
+import { claimOrphansFor, ownerScope } from './_helpers';
 
 export type AiGeneration = typeof aiGenerations.$inferSelect;
 export type NewAiGeneration = typeof aiGenerations.$inferInsert;
@@ -11,13 +12,9 @@ export async function create(db: Db, data: NewAiGeneration): Promise<AiGeneratio
 }
 
 export async function get(db: Db, id: number, ownerId?: string): Promise<AiGeneration | undefined> {
-  const conds = [eq(aiGenerations.id, id)];
-  if (ownerId !== undefined) conds.push(eq(aiGenerations.ownerId, ownerId));
-  const rows = await db
-    .select()
-    .from(aiGenerations)
-    .where(conds.length > 1 ? and(...conds) : conds[0])
-    .limit(1);
+  const scope = ownerScope(ownerId, aiGenerations.ownerId);
+  const cond = scope ? and(eq(aiGenerations.id, id), scope) : eq(aiGenerations.id, id);
+  const rows = await db.select().from(aiGenerations).where(cond).limit(1);
   return rows[0];
 }
 
@@ -33,7 +30,8 @@ export async function list(db: Db, filter: ListFilter = {}): Promise<AiGeneratio
   const conds = [];
   if (filter.productId) conds.push(eq(aiGenerations.productId, filter.productId));
   if (filter.adId) conds.push(eq(aiGenerations.adId, filter.adId));
-  if (filter.ownerId !== undefined) conds.push(eq(aiGenerations.ownerId, filter.ownerId));
+  const scope = ownerScope(filter.ownerId, aiGenerations.ownerId);
+  if (scope) conds.push(scope);
   const where = conds.length > 0 ? and(...conds) : undefined;
   const q = db.select().from(aiGenerations);
   return (where ? q.where(where) : q)
@@ -43,16 +41,10 @@ export async function list(db: Db, filter: ListFilter = {}): Promise<AiGeneratio
 }
 
 export async function remove(db: Db, id: number, ownerId?: string): Promise<void> {
-  const conds = [eq(aiGenerations.id, id)];
-  if (ownerId !== undefined) conds.push(eq(aiGenerations.ownerId, ownerId));
-  await db.delete(aiGenerations).where(conds.length > 1 ? and(...conds) : conds[0]);
+  const scope = ownerScope(ownerId, aiGenerations.ownerId);
+  await db.delete(aiGenerations).where(scope ? and(eq(aiGenerations.id, id), scope) : eq(aiGenerations.id, id));
 }
 
 export async function claimOrphans(db: Db, ownerId: string): Promise<number> {
-  const rows = await db
-    .update(aiGenerations)
-    .set({ ownerId })
-    .where(isNull(aiGenerations.ownerId))
-    .returning({ id: aiGenerations.id });
-  return rows.length;
+  return claimOrphansFor(db, aiGenerations, ownerId);
 }

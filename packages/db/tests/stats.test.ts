@@ -187,4 +187,53 @@ describe('stats repository', () => {
     const s = await stats.zoneStats(db, ZONE_ID);
     expect(s.impressions).toBe(0);
   });
+
+  it('adTotals aggregates across zones with ctr', async () => {
+    expect(await stats.adTotals(db, AD_ID)).toEqual({
+      impressions: 0,
+      clicks: 0,
+      ctr: 0,
+      uniqueViewers: 0,
+      uniqueClickers: 0,
+    });
+    const now = new Date().toISOString();
+    for (const zoneId of ['z-a', 'z-b']) {
+      for (let i = 0; i < 4; i++) {
+        await stats.recordImpression(db, {
+          zoneId,
+          adId: AD_ID,
+          ipHash: `${zoneId}-${i}`,
+          sessionId: `${zoneId}-s${i}`,
+          createdAt: now,
+        });
+      }
+    }
+    await stats.recordClick(db, { zoneId: 'z-a', adId: AD_ID, ipHash: 'c', sessionId: 'z-a-s0', createdAt: now });
+    await stats.recordClick(db, { zoneId: 'z-b', adId: AD_ID, ipHash: 'c', sessionId: 'z-b-s0', createdAt: now });
+
+    const t = await stats.adTotals(db, AD_ID);
+    expect(t.impressions).toBe(8);
+    expect(t.clicks).toBe(2);
+    expect(t.ctr).toBeCloseTo(0.25, 5);
+    expect(t.uniqueViewers).toBe(8);
+    expect(t.uniqueClickers).toBe(2);
+  });
+
+  it('adByZone splits one ad per zone', async () => {
+    const now = new Date().toISOString();
+    for (let i = 0; i < 10; i++) {
+      await stats.recordImpression(db, { zoneId: 'hot', adId: AD_ID, ipHash: `h${i}`, createdAt: now });
+    }
+    for (let i = 0; i < 2; i++) {
+      await stats.recordImpression(db, { zoneId: 'cold', adId: AD_ID, ipHash: `c${i}`, createdAt: now });
+    }
+    await stats.recordClick(db, { zoneId: 'hot', adId: AD_ID, ipHash: 'x', createdAt: now });
+
+    const rows = await stats.adByZone(db, AD_ID);
+    const hot = rows.find((r) => r.zoneId === 'hot');
+    const cold = rows.find((r) => r.zoneId === 'cold');
+    expect(hot).toMatchObject({ impressions: 10, clicks: 1 });
+    expect(hot?.ctr).toBeCloseTo(0.1, 5);
+    expect(cold).toMatchObject({ impressions: 2, clicks: 0, ctr: 0 });
+  });
 });

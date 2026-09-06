@@ -1,13 +1,14 @@
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import type { Db } from '../db';
 import { zones } from '../schema';
+import { claimOrphansFor, ownerScope } from './_helpers';
 
 export type Zone = typeof zones.$inferSelect;
 export type NewZone = typeof zones.$inferInsert;
 export type ZoneStatus = 'active' | 'paused';
 
 function scope(ownerId: string | undefined) {
-  return ownerId === undefined ? undefined : eq(zones.ownerId, ownerId);
+  return ownerScope(ownerId, zones.ownerId);
 }
 
 export async function list(db: Db, ownerId?: string): Promise<Zone[]> {
@@ -63,6 +64,5 @@ export async function remove(db: Db, id: string, ownerId?: string): Promise<void
 }
 
 export async function claimOrphans(db: Db, ownerId: string): Promise<number> {
-  const rows = await db.update(zones).set({ ownerId }).where(isNull(zones.ownerId)).returning({ id: zones.id });
-  return rows.length;
+  return claimOrphansFor(db, zones, ownerId);
 }

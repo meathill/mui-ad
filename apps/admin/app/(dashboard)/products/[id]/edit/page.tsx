@@ -5,29 +5,25 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { Product } from '@muiad/db';
+import { ProductFields, type ProductFieldValues } from '@/components/product-form';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { Field, inputClass, inputMonoClass } from '@/components/ui/field';
-import { apiFromConfig } from '@/lib/api';
-import { useConfig } from '@/lib/store';
+import { ErrorBanner, Loading } from '@/components/ui/error-banner';
+import { errMsg } from '@/lib/format';
+import { useApi } from '@/lib/use-api';
 
 export default function EditProductPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const id = params.id;
-  const workerUrl = useConfig((s) => s.workerUrl);
-  const apiKey = useConfig((s) => s.apiKey);
+  const api = useApi();
 
   const [product, setProduct] = useState<Product | null>(null);
-  const [name, setName] = useState('');
-  const [url, setUrl] = useState('');
-  const [description, setDescription] = useState('');
+  const [values, setValues] = useState<ProductFieldValues>({ name: '', url: '', description: '' });
   const [submitting, setSubmitting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     (async () => {
       try {
         const rows = await api.products.list();
@@ -37,46 +33,42 @@ export default function EditProductPage() {
           return;
         }
         setProduct(p);
-        setName(p.name);
-        setUrl(p.url);
-        setDescription(p.description ?? '');
+        setValues({ name: p.name, url: p.url, description: p.description ?? '' });
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
+        setError(errMsg(e));
       }
     })();
-  }, [workerUrl, apiKey, id]);
+  }, [api, id]);
+
+  function patch(p: Partial<ProductFieldValues>) {
+    setValues((v) => ({ ...v, ...p }));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     setSubmitting(true);
     setError('');
     try {
-      await api.products.update(id, { name, url, description: description || null });
+      await api.products.update(id, { name: values.name, url: values.url, description: values.description || null });
       router.replace('/products');
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errMsg(e));
       setSubmitting(false);
     }
   }
 
   async function handleDelete() {
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     try {
       await api.products.remove(id);
       router.replace('/products');
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errMsg(e));
       throw e;
     }
   }
 
   if (!product) {
-    return (
-      <div className="text-center font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">{error || '加载中…'}</div>
-    );
+    return <Loading text={error || '加载中…'} />;
   }
 
   return (
@@ -92,22 +84,9 @@ export default function EditProductPage() {
       <p className="mt-2 font-mono text-[11px] text-ink-soft">{id}</p>
 
       <form onSubmit={handleSubmit} className="mt-10 space-y-6">
-        <Field label="名称">
-          <input required value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
-        </Field>
-        <Field label="产品 URL">
-          <input required type="url" value={url} onChange={(e) => setUrl(e.target.value)} className={inputMonoClass} />
-        </Field>
-        <Field label="描述" hint="可选">
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={4}
-            className={`${inputClass} resize-none`}
-          />
-        </Field>
+        <ProductFields values={values} onPatch={patch} descHint="可选" />
 
-        {error && <p className="rounded-md bg-ember/10 px-4 py-3 font-mono text-xs text-ember-deep">{error}</p>}
+        <ErrorBanner message={error} />
 
         <div className="flex items-center justify-between pt-2">
           <div className="flex gap-3">

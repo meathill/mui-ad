@@ -3,9 +3,10 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Field, inputClass } from '@/components/ui/field';
-import { apiFromConfig } from '@/lib/api';
+import { ErrorBanner } from '@/components/ui/error-banner';
 import { authClient } from '@/lib/auth-client';
-import { useConfig } from '@/lib/store';
+import { errMsg } from '@/lib/format';
+import { useApi } from '@/lib/use-api';
 import { useAuthMode } from '@/lib/use-auth-mode';
 
 type ApprovalMode = 'auto' | 'manual' | 'warm' | 'ai';
@@ -21,15 +22,14 @@ const MODES: Array<{ value: ApprovalMode; label: string; hint: string }> = [
   {
     value: 'ai',
     label: 'Workers AI 自动审核',
-    hint: '调 Workers AI 给广告打分，没严重问题就放行（Step 2b 才真的接上，现在等同"审批后上线"）。',
+    hint: '调 Workers AI 审文案和 banner 图，没严重问题就放行；拿不准的进"待审核"。',
   },
 ];
 
 export default function AccountPage() {
   const router = useRouter();
   const { user, isOperator } = useAuthMode();
-  const workerUrl = useConfig((s) => s.workerUrl);
-  const apiKey = useConfig((s) => s.apiKey);
+  const api = useApi();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -42,17 +42,13 @@ export default function AccountPage() {
   useEffect(() => {
     // operator 模式没有个人账号，审批策略是 per-user 设置，跳过。
     if (isOperator) return;
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     api.settings
       .get()
       .then((s) => setMode(s.approvalMode))
       .catch(() => setMode('auto'));
-  }, [workerUrl, apiKey, isOperator]);
+  }, [api, isOperator]);
 
   async function saveMode(next: ApprovalMode) {
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     setModeSaving(true);
     setModeOk('');
     try {
@@ -60,7 +56,7 @@ export default function AccountPage() {
       setMode(next);
       setModeOk('已保存。新来的广告会按这个模式处理。');
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errMsg(e));
     } finally {
       setModeSaving(false);
     }
@@ -179,7 +175,7 @@ export default function AccountPage() {
             />
           </Field>
 
-          {error && <p className="rounded-md bg-ember/10 px-4 py-3 font-mono text-xs text-ember-deep">{error}</p>}
+          <ErrorBanner message={error} />
           {ok && <p className="rounded-md bg-grass/10 px-4 py-3 font-mono text-xs text-grass-deep">{ok}</p>}
 
           <button

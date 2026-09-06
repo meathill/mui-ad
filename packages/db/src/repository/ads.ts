@@ -1,8 +1,9 @@
-import { and, countDistinct, desc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, countDistinct, desc, eq, inArray } from 'drizzle-orm';
 import type { Db } from '../db';
 import { ads, zoneAds, zones } from '../schema';
 import type { ApprovalMode } from '../schema/user-settings';
 import * as userSettings from './user-settings';
+import { claimOrphansFor, ownerScope } from './_helpers';
 
 export type Ad = typeof ads.$inferSelect;
 export type NewAd = typeof ads.$inferInsert;
@@ -10,7 +11,7 @@ export type AdStatus = 'active' | 'paused';
 export type ZoneAd = typeof zoneAds.$inferSelect;
 
 function scope(ownerId: string | undefined) {
-  return ownerId === undefined ? undefined : eq(ads.ownerId, ownerId);
+  return ownerScope(ownerId, ads.ownerId);
 }
 
 export async function list(db: Db, ownerId?: string): Promise<Ad[]> {
@@ -72,7 +73,8 @@ export type ModerateFn = (ctx: {
  *   - auto        → active
  *   - manual      → pending
  *   - warm        → 如果 zone 已经有 active 的 zone_ads，active；否则 pending
- *   - ai          → Step 2b 才真的调 AI；目前走 manual 兜底
+ *   - ai          → 调 moderate 回调（Workers AI 文本 + 图片，fail-closed）；
+ *                     不传 moderate 则兜底 pending
  *   - 若广告主本人就是 zone 所有者 → 一律 active（给自己看）
  *
  * 已存在的 (zone_id, ad_id) 对会被 PRIMARY KEY 约束拒绝，调用方自行决定要不要
@@ -249,8 +251,7 @@ export async function listActiveByZone(db: Db, zoneId: string): Promise<Array<{ 
 }
 
 export async function claimOrphans(db: Db, ownerId: string): Promise<number> {
-  const rows = await db.update(ads).set({ ownerId }).where(isNull(ads.ownerId)).returning({ id: ads.id });
-  return rows.length;
+  return claimOrphansFor(db, ads, ownerId);
 }
 
 /** 批量拉一组广告的挂载信息（含 zone 名和 status），performance tool 用。 */

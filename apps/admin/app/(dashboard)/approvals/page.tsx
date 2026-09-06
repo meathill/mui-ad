@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Ad, Zone } from '@muiad/db';
 import TenantOnlyNotice from '@/components/tenant-only-notice';
-import { apiFromConfig } from '@/lib/api';
-import { useConfig } from '@/lib/store';
+import { ErrorBanner, Loading } from '@/components/ui/error-banner';
+import { errMsg } from '@/lib/format';
+import { useApi } from '@/lib/use-api';
 import { useAuthMode } from '@/lib/use-auth-mode';
 
 type Pending = {
@@ -21,21 +22,18 @@ type Pending = {
 
 export default function ApprovalsPage() {
   const { isOperator } = useAuthMode();
-  const workerUrl = useConfig((s) => s.workerUrl);
-  const apiKey = useConfig((s) => s.apiKey);
+  const api = useApi();
   const [rows, setRows] = useState<Pending[] | null>(null);
   const [error, setError] = useState('');
   const [acting, setActing] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     try {
       setRows(await api.approvals.list());
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errMsg(e));
     }
-  }, [workerUrl, apiKey]);
+  }, [api]);
 
   useEffect(() => {
     // operator（root key）没有个人广告位，/api/approvals 会 401；跳过。
@@ -43,8 +41,6 @@ export default function ApprovalsPage() {
   }, [load, isOperator]);
 
   async function act(p: Pending, decision: 'approve' | 'reject') {
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     const key = `${p.zoneAd.zoneId}:${p.zoneAd.adId}`;
     setActing(key);
     try {
@@ -52,7 +48,7 @@ export default function ApprovalsPage() {
       else await api.approvals.reject(p.zoneAd.zoneId, p.zoneAd.adId);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errMsg(e));
     } finally {
       setActing(null);
     }
@@ -74,10 +70,10 @@ export default function ApprovalsPage() {
         其他广告主想把广告挂到你的 zone 上。你在 /account 设的"广告上线策略"决定了哪些会进这里。
       </p>
 
-      {error && <p className="mt-6 rounded-md bg-ember/10 px-4 py-3 font-mono text-xs text-ember-deep">{error}</p>}
+      <ErrorBanner message={error} className="mt-6" />
 
       {rows === null ? (
-        <div className="mt-10 text-center font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">加载中…</div>
+        <Loading className="mt-10" />
       ) : rows.length === 0 ? (
         <div className="mt-10 rounded-xl border border-rule/60 bg-paper-deep/30 p-10 text-center">
           <p className="font-serif text-xl text-ink">没有待审批的广告</p>

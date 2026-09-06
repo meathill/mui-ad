@@ -2,8 +2,8 @@
 
 import { CloudArrowUp, X } from '@phosphor-icons/react';
 import { type DragEvent, useRef, useState } from 'react';
-import { apiFromConfig } from '@/lib/api';
-import { useConfig } from '@/lib/store';
+import { errMsg, formatHost } from '@/lib/format';
+import { useApi } from '@/lib/use-api';
 
 interface UploadInputProps {
   value: string;
@@ -26,8 +26,7 @@ export function UploadInput({
   allowUrlInput = true,
   extraAction,
 }: UploadInputProps) {
-  const workerUrl = useConfig((s) => s.workerUrl);
-  const apiKey = useConfig((s) => s.apiKey);
+  const api = useApi();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -41,17 +40,12 @@ export function UploadInput({
       );
       return;
     }
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) {
-      setError('配置丢失，请重新设置 API key');
-      return;
-    }
     setUploading(true);
     try {
       const res = await api.uploads.create(file);
       onChange(res.url);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errMsg(e));
     } finally {
       setUploading(false);
     }
@@ -94,7 +88,7 @@ export function UploadInput({
           <img src={value} alt="preview" className="size-20 rounded-md border border-rule/60 bg-paper object-cover" />
           <div className="min-w-0 flex-1">
             <div className="truncate font-mono text-[11px] text-ink-soft" title={value}>
-              {value.replace(/^https?:\/\//, '')}
+              {formatHost(value)}
             </div>
             <div className="mt-2 flex gap-2">
               <button

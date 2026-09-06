@@ -4,28 +4,28 @@ import { Trash } from '@phosphor-icons/react';
 import { useCallback, useEffect, useState } from 'react';
 import type { AiGeneration, Product } from '@muiad/db';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { apiFromConfig } from '@/lib/api';
+import { ErrorBanner, Loading } from '@/components/ui/error-banner';
+import { errMsg } from '@/lib/format';
 import { useConfig } from '@/lib/store';
+import { useApi } from '@/lib/use-api';
 
 export default function AiGenerationsPage() {
+  const api = useApi();
   const workerUrl = useConfig((s) => s.workerUrl);
-  const apiKey = useConfig((s) => s.apiKey);
   const [rows, setRows] = useState<AiGeneration[] | null>(null);
   const [products, setProducts] = useState<Map<string, Product>>(new Map());
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     try {
       const [list, productList] = await Promise.all([api.aiGenerations.list({ limit: 100 }), api.products.list()]);
       setRows(list);
       setProducts(new Map(productList.map((p) => [p.id, p])));
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errMsg(e));
     }
-  }, [workerUrl, apiKey]);
+  }, [api]);
 
   useEffect(() => {
     load();
@@ -33,14 +33,12 @@ export default function AiGenerationsPage() {
 
   async function confirmDelete() {
     if (deleteId === null) return;
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     try {
       await api.aiGenerations.remove(deleteId);
       setDeleteId(null);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      setError(errMsg(e));
       throw e;
     }
   }
@@ -55,10 +53,10 @@ export default function AiGenerationsPage() {
         所有通过 AI banner composer 生成的图片都在这里。原图和裁剪版都保留在 R2，可以重复使用或删除释放空间。
       </p>
 
-      {error && <p className="mt-6 rounded-md bg-ember/10 px-4 py-3 font-mono text-xs text-ember-deep">{error}</p>}
+      <ErrorBanner message={error} className="mt-6" />
 
       {rows === null ? (
-        <div className="mt-10 text-center font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">加载中…</div>
+        <Loading className="mt-10" />
       ) : rows.length === 0 ? (
         <div className="mt-10 rounded-xl border border-rule/60 bg-paper-deep/30 p-10 text-center">
           <p className="font-serif text-xl text-ink">还没有 AI 生成过图片</p>

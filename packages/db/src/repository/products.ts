@@ -1,17 +1,13 @@
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import type { Db } from '../db';
 import { products } from '../schema';
+import { claimOrphansFor, ownerScope } from './_helpers';
 
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
 
-/**
- * ownerId 语义：
- * - `string` → 按此 user 过滤（普通用户）
- * - `undefined` → 不过滤（root key / MCP / CI，跨用户可见）
- */
 function scope(ownerId: string | undefined) {
-  return ownerId === undefined ? undefined : eq(products.ownerId, ownerId);
+  return ownerScope(ownerId, products.ownerId);
 }
 
 export async function list(db: Db, ownerId?: string): Promise<Product[]> {
@@ -52,10 +48,5 @@ export async function remove(db: Db, id: string, ownerId?: string): Promise<void
 
 /** Admin-only: 把所有 owner_id IS NULL 的行赋给指定 user。 */
 export async function claimOrphans(db: Db, ownerId: string): Promise<number> {
-  const rows = await db
-    .update(products)
-    .set({ ownerId })
-    .where(isNull(products.ownerId))
-    .returning({ id: products.id });
-  return rows.length;
+  return claimOrphansFor(db, products, ownerId);
 }

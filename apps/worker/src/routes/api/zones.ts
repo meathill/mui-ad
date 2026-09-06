@@ -1,22 +1,20 @@
 import { Hono } from 'hono';
 import { createDb, zones } from '@muiad/db';
 import type { HonoEnv } from '../../env';
+import { badRequest, notFound } from '../../lib/http';
+import { getOwnerId } from '../../lib/request-scope';
 
 const app = new Hono<HonoEnv>();
 
-function ownerScope(c: { var: { user: { id: string } | null } }): string | undefined {
-  return c.var.user?.id;
-}
-
 app.get('/', async (c) => {
   const db = createDb(c.env.DB);
-  return c.json({ zones: await zones.list(db, ownerScope(c)) });
+  return c.json({ zones: await zones.list(db, getOwnerId(c)) });
 });
 
 app.get('/:id', async (c) => {
   const db = createDb(c.env.DB);
-  const row = await zones.get(db, c.req.param('id'), ownerScope(c));
-  if (!row) return c.json({ error: 'Not found' }, 404);
+  const row = await zones.get(db, c.req.param('id'), getOwnerId(c));
+  if (!row) return notFound(c);
   return c.json({
     zone: row,
     embedCode: embedSnippet(c.env.MUIAD_URL, row.id, row.width, row.height),
@@ -35,7 +33,7 @@ app.post('/', async (c) => {
     audience?: string;
   };
   if (!body.name || !body.siteUrl || !body.width || !body.height) {
-    return c.json({ error: 'name, siteUrl, width, height are required' }, 400);
+    return badRequest(c, 'name, siteUrl, width, height are required');
   }
   const db = createDb(c.env.DB);
   const row = await zones.create(db, {
@@ -74,14 +72,14 @@ app.patch('/:id', async (c) => {
     tags: string;
     audience: string;
   }>;
-  const row = await zones.update(db, c.req.param('id'), patch, ownerScope(c));
-  if (!row) return c.json({ error: 'Not found' }, 404);
+  const row = await zones.update(db, c.req.param('id'), patch, getOwnerId(c));
+  if (!row) return notFound(c);
   return c.json({ zone: row });
 });
 
 app.delete('/:id', async (c) => {
   const db = createDb(c.env.DB);
-  await zones.remove(db, c.req.param('id'), ownerScope(c));
+  await zones.remove(db, c.req.param('id'), getOwnerId(c));
   return c.body(null, 204);
 });
 

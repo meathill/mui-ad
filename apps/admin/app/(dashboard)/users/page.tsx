@@ -3,15 +3,16 @@
 import { Trash } from '@phosphor-icons/react';
 import { useCallback, useEffect, useState } from 'react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { ErrorBanner, Loading } from '@/components/ui/error-banner';
 import { Field, inputClass } from '@/components/ui/field';
-import { type AdminUserDto, apiFromConfig } from '@/lib/api';
-import { useConfig } from '@/lib/store';
+import type { AdminUserDto } from '@/lib/api';
+import { errMsg } from '@/lib/format';
+import { useApi } from '@/lib/use-api';
 import { useAuthMode } from '@/lib/use-auth-mode';
 
 export default function UsersPage() {
   const { isOperator } = useAuthMode();
-  const workerUrl = useConfig((s) => s.workerUrl);
-  const apiKey = useConfig((s) => s.apiKey);
+  const api = useApi();
   const [users, setUsers] = useState<AdminUserDto[] | null>(null);
   const [error, setError] = useState('');
   const [newEmail, setNewEmail] = useState('');
@@ -21,14 +22,12 @@ export default function UsersPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const api = apiFromConfig(workerUrl, apiKey);
-    if (!api) return;
     try {
       setUsers(await api.admin.listUsers());
     } catch (e) {
-      setError(e instanceof Error ? e.message : '加载失败');
+      setError(errMsg(e));
     }
-  }, [workerUrl, apiKey]);
+  }, [api]);
 
   useEffect(() => {
     // 用户管理仅站长（root key）可用。
@@ -39,15 +38,14 @@ export default function UsersPage() {
     e.preventDefault();
     setError('');
     setSubmitting(true);
-    const api = apiFromConfig(workerUrl, apiKey);
     try {
-      await api?.admin.createUser({
+      await api.admin.createUser({
         email: newEmail.trim(),
         password: newPassword,
         name: newName.trim() || newEmail.trim(),
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : '创建失败');
+      setError(errMsg(err));
       return;
     } finally {
       setSubmitting(false);
@@ -60,11 +58,10 @@ export default function UsersPage() {
 
   async function confirmDelete() {
     if (!deleteId) return;
-    const api = apiFromConfig(workerUrl, apiKey);
     try {
-      await api?.admin.deleteUser(deleteId);
+      await api.admin.deleteUser(deleteId);
     } catch (err) {
-      const message = err instanceof Error ? err.message : '删除失败';
+      const message = errMsg(err);
       setError(message);
       throw new Error(message);
     }
@@ -93,7 +90,7 @@ export default function UsersPage() {
         改密码。所有账号都是普通用户。
       </p>
 
-      {error && <p className="mt-6 rounded-md bg-ember/10 px-4 py-3 font-mono text-xs text-ember-deep">{error}</p>}
+      <ErrorBanner message={error} className="mt-6" />
 
       <section className="mt-10 rounded-xl border border-rule/60 bg-paper-deep/20 p-6">
         <h2 className="font-serif text-xl tracking-tight">创建新账号</h2>
@@ -135,7 +132,7 @@ export default function UsersPage() {
       <section className="mt-10">
         <h2 className="font-serif text-xl tracking-tight">现有账号</h2>
         {users === null ? (
-          <p className="mt-4 font-mono text-xs uppercase tracking-[0.2em] text-ink-soft">加载中…</p>
+          <Loading className="mt-4" />
         ) : (
           <ul className="mt-4 divide-y divide-rule/60 rounded-xl border border-rule/60">
             {users.map((u) => (
