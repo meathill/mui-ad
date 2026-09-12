@@ -50,7 +50,6 @@ MVP-0（landing / worker / admin）+ 用户体系 Phase A–D + MVP-2 AI Agent
 | D1 | 业务库（waitlist / products / zones / ads / zone_ads / impressions / clicks / conversions / ai_generations / user / session / account / verification / api_keys / user_settings） | `muiad` / `ca42d694-ebdb-4c62-984a-affa9d6fd891` |
 | Workers AI | `ai` 审批模式的 text + vision 审核 | `env.AI` binding |
 | D1 | OpenNext tag cache | `tag-cache` / `5f26868d-5d24-4645-8954-a27168f6fcd6` |
-| R2 | OpenNext 增量缓存 | `site-cache` |
 | DO | OpenNext cache queue | `DOQueueHandler`（v1 migration） |
 | Account | CF 账号 | `fdc63eeea83ae8f5234357308b9a638b` |
 
@@ -78,9 +77,7 @@ cd apps/web && pnpm exec opennextjs-cloudflare build && \
   CLOUDFLARE_ACCOUNT_ID=fdc63eeea83ae8f5234357308b9a638b pnpm exec wrangler deploy
 ```
 
-> `deploy` 必须带 `CLOUDFLARE_ACCOUNT_ID`，否则 OpenNext 的 R2 cache populator 会弹交互式账号选择卡住。
->
-> 若 `populate-cache` 抛 "You must be logged in to use wrangler dev in remote mode" / "logged in with an API Token"，用上面的兜底命令——`opennextjs-cloudflare build` 产出 `.open-next/worker.js` 后直接 `wrangler deploy`，跳过 populate。我们的落地页没有 ISR/SSG 缓存内容，跳过无副作用。
+> Web 当前不启用 R2 incremental cache，不会执行 R2 cache populate；直接使用上面的部署命令即可。
 >
 > CI（Cloudflare Workers Builds）的自动部署目前也会撞上同一个坑，暂未修——见 [DEV_NOTE.md](./DEV_NOTE.md)。
 

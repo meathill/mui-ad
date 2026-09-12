@@ -48,12 +48,6 @@
       "new_sqlite_classes": ["DOQueueHandler"]
     }
   ],
-  "r2_buckets": [
-    {
-      "binding": "NEXT_INC_CACHE_R2_BUCKET",
-      "bucket_name": "site-cache"
-    }
-  ],
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",

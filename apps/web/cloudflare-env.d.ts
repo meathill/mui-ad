@@ -7,7 +7,6 @@ declare namespace Cloudflare {
     durableNamespaces: 'DOQueueHandler';
   }
   interface Env {
-    NEXT_INC_CACHE_R2_BUCKET: R2Bucket;
     DB: D1Database;
     NEXT_TAG_CACHE_D1: D1Database;
     IMAGES: ImagesBinding;

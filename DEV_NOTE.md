@@ -173,15 +173,9 @@ pnpm --filter @muiad/web build  # next build 过类型检查
 - 历史教训：MVP-1a commit 时误带了 `apps/worker/.dev.vars`（含 API key），force-push
   后 rotate 了 key 补救——commit 前看 `git status` 是便宜但重要的一步
 
-### 跑 `opennextjs-cloudflare deploy` 必须设 `CLOUDFLARE_ACCOUNT_ID`
-- 否则 R2 cache populator 会弹交互式账号选择阻塞
-- 我们的账号：`fdc63eeea83ae8f5234357308b9a638b`
-
-### `opennextjs-cloudflare deploy` 的 populate-cache 步骤偶发认证失败
-- **现象**：抛 `You must be logged in to use wrangler dev in remote mode` 或 `logged in with an API Token. Unset the CLOUDFLARE_API_TOKEN`，CI 里稳定复现，本地偶发
-- **根因**：populate-cache 内部调 `wrangler dev --remote` 做 R2 provisioning，这条路径对 API token 不认，只走 OAuth
-- **兜底**：直接用 `opennextjs-cloudflare build && wrangler deploy` 绕开 populate。落地页无 ISR 内容，跳过 populate 无副作用
-- **未解**：CI（Cloudflare Workers Builds）自动部署目前跑不通，先手动部署，等 OpenNext 修掉这个行为再回来接
+### Web 当前不使用 R2 incremental cache
+- `apps/web/open-next.config.ts` 保持默认的非 R2 缓存配置，落地页没有需要持久化 ISR 的内容。
+- 部署不需要 R2 cache populate；若其他部署问题出现，仍按部署命令和 Cloudflare 账号配置排查。
 
 ### Wrangler 的 D1 migration 目录默认 `./migrations`
 - `apps/web/migrations/NNNN_*.sql` 是权威来源；命令 `pnpm run db:migrate:remote`
