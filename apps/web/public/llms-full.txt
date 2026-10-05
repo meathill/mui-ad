@@ -1,0 +1,105 @@
+# MuiAD (full)
+
+Self-hosted, MCP-first developer promotion network.
+Site: https://muiad.meathill.com
+Demo admin: https://admin.muiad.meathill.com
+API / MCP: https://api.muiad.meathill.com
+Repo: https://github.com/meathill/mui-ad
+Short AI index: https://muiad.meathill.com/llms.txt
+MCP discovery: https://muiad.meathill.com/.well-known/mcp.json
+
+## Product summary
+
+MuiAD lets indie developers and AI coding agents promote side projects without paying a traditional ad network. Each deployment is a node on Cloudflare (Workers + D1 + R2 + Workers AI). Nodes can later federate; today you can run a private island, join the public demo node, or self-host.
+
+Design goal: finish promotion while you code. Talk to Claude / Cursor; the agent calls MCP tools to scan inventory, generate creatives, place ads, respect host approval modes, and optimize on CTR.
+
+## MCP connection
+
+1. Open https://admin.muiad.meathill.com (or your self-hosted admin).
+2. Create an API key under `/api-keys` (`muiad_…`).
+3. Register the Streamable HTTP MCP server:
+
+```bash
+claude mcp add --transport http muiad https://api.muiad.meathill.com/mcp \
+  --header "Authorization: Bearer muiad_YOUR_KEY"
+```
+
+serverInfo (initialize): `{ "name": "muiad", "version": "0.1.0" }`
+Auth: `Authorization: Bearer muiad_…` (per-user) or root `MUIAD_API_KEY` for ops/CI.
+
+## MCP tools (13)
+
+### Publisher (zone owner)
+
+- `muiad_create_zone` — create an ad slot; fill category / description / tags / audience for better agent matching
+- `muiad_list_zones` — list your zones
+- `muiad_list_pending_attachments` — pending attach requests
+- `muiad_review_attachment` — approve / reject
+
+### Advertiser
+
+- `muiad_register_product` — register a product to promote
+- `muiad_upload_asset` — upload banner (base64 / data URL) to self-hosted R2; returns public `image_url`
+- `muiad_scan_zones` — cross-user scan of active zones (category / tag filters)
+- `muiad_create_ad` — create ad and attach to many zones; returns live / pending / skipped
+- `muiad_list_ads` — list your ads
+- `muiad_list_ads_performance` — full + per-zone metrics and attach status
+- `muiad_set_ad_status` — pause / resume your ad
+
+### Data
+
+- `muiad_get_zone_stats` — zone impressions / clicks / CTR (unique visitors)
+- `muiad_get_ad_conversions` — conversion summary for one ad
+
+## Agent playbooks
+
+### Advertiser auto-place
+
+Prompt the agent to: register product → `muiad_scan_zones` → pick 3 matching zones → write zone-specific copy → `muiad_upload_asset` → `muiad_create_ad` → report live vs pending.
+
+### Optimize loop
+
+After a few days: `muiad_list_ads_performance` → pause CTR < 0.5% with enough impressions → highlight high-CTR zone expansions → remind on pending attaches older than 48h.
+
+### Semi-auto approve (manual / ai modes)
+
+`muiad_list_pending_attachments` → approve trusted categories → reject scam/deceptive notes → escalate the rest.
+
+## Approval modes
+
+Zone owners choose: `auto` | `manual` | `warm` | `ai` (Workers AI first pass, fail-closed).
+
+## Embed / serve
+
+Public ad serve JSON: `GET https://api.muiad.meathill.com/serve?zone=<zoneId>`
+Landing demo zone is embedded on https://muiad.meathill.com (real impressions + click tracking).
+
+## Auth model
+
+| Call style | caller.user | Visibility |
+|---|---|---|
+| Admin session | current user | own data only |
+| MCP + `muiad_…` | that user | own data only |
+| MCP + `MUIAD_API_KEY` | null (root) | cross-user (ops/CI) |
+
+Any authenticated advertiser may attach to any active zone; go-live depends on the zone owner's approval_mode. Stats and status changes are scoped to the caller.
+
+## Roadmap
+
+- Shipped: MVP-0 single instance + MCP + render; MVP-1 attribution; MVP-2 agent loop (scan / generate / review / optimize / marketplace)
+- Next: MVP-3 node federation; MVP-4 traffic economy (credits / rev share / public nodes)
+
+## Docs & source
+
+- AGENT_GUIDE: https://github.com/meathill/mui-ad/blob/master/docs/AGENT_GUIDE.md
+- DEPLOYMENT: https://github.com/meathill/mui-ad/blob/master/DEPLOYMENT.md
+- README: https://github.com/meathill/mui-ad/blob/master/README.md
+- DEV_NOTE: https://github.com/meathill/mui-ad/blob/master/DEV_NOTE.md
+
+## Structured data / discovery on this site
+
+- Organization + WebSite JSON-LD on the homepage (Organization includes logo)
+- `/.well-known/mcp.json` MCP server card
+- `/llms.txt` short index; `/llms-full.txt` this document
+- `/favicon.ico`, `/logo.svg`, `/og.png`, `/sitemap.xml`, `/robots.txt`

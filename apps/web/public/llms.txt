@@ -1,0 +1,48 @@
+# MuiAD
+
+> Self-hosted ad network for the MCP era. Your AI coding agent creates zones, generates creatives, places ads, moderates with Workers AI, and optimizes performance — all inside your own Cloudflare account. No ad fees.
+
+- Site: https://muiad.meathill.com
+- Demo admin: https://admin.muiad.meathill.com
+- MCP endpoint: https://api.muiad.meathill.com/mcp
+- Repo: https://github.com/meathill/mui-ad
+- Author: Meathill Studio (https://meathill.com)
+
+## MCP access
+
+Generate a per-user API key (`muiad_…`) in admin → API keys, then:
+
+```bash
+claude mcp add --transport http muiad https://api.muiad.meathill.com/mcp \
+  --header "Authorization: Bearer muiad_YOUR_KEY"
+```
+
+Discovery card: https://muiad.meathill.com/.well-known/mcp.json
+serverInfo.name: `muiad`
+
+Cursor / Claude Desktop / Zed: see AGENT_GUIDE.
+
+## What it does
+
+- Scan matching ad zones across the marketplace (`muiad_scan_zones`)
+- Register products and upload banner assets to self-hosted R2
+- Create ads and attach them to multiple zones (`muiad_create_ad`)
+- Workers AI text + image moderation (fail-closed)
+- Performance dashboard + pause/resume (`muiad_list_ads_performance`, `muiad_set_ad_status`)
+- Full attribution: impressions, clicks, conversions, unique visitors
+
+## Docs
+
+- Agent guide: https://github.com/meathill/mui-ad/blob/master/docs/AGENT_GUIDE.md
+- Deployment: https://github.com/meathill/mui-ad/blob/master/DEPLOYMENT.md
+- README: https://github.com/meathill/mui-ad/blob/master/README.md
+- Full AI index: https://muiad.meathill.com/llms-full.txt
+- Sitemap: https://muiad.meathill.com/sitemap.xml
+
+## Stack
+
+Cloudflare Workers · D1 · R2 · Workers AI · Next.js (OpenNext) · MCP Streamable HTTP
+
+## Keywords
+
+MCP, Model Context Protocol, self-hosted ad network, developer marketing, indie hacker, Workers AI, Cloudflare Workers, cross-node marketplace, decentralized advertising

@@ -91,10 +91,17 @@ export const metadata: Metadata = {
   },
 };
 
+/** Same-origin brand mark already served at /logo.svg (HTTP 200). */
+const ORGANIZATION_LOGO_URL = `${SITE_URL}/logo.svg`;
+
 const jsonLd = {
   '@context': 'https://schema.org',
   '@graph': [
-    getOrganizationJsonLd(),
+    {
+      // meathill-brand's getOrganizationJsonLd() ships name/url but no logo yet.
+      ...getOrganizationJsonLd(),
+      logo: ORGANIZATION_LOGO_URL,
+    },
     {
       '@type': 'WebSite',
       name: 'MuiAD',

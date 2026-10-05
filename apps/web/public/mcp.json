@@ -1,0 +1,33 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "name": "muiad",
+  "description": "Self-hosted, MCP-first developer ad network. Scan zones, generate creatives, place ads, moderate with Workers AI, and optimize performance — all on your own Cloudflare account.",
+  "version": "0.1.0",
+  "homepage": "https://muiad.meathill.com",
+  "documentation": "https://github.com/meathill/mui-ad/blob/master/docs/AGENT_GUIDE.md",
+  "endpoint": "https://api.muiad.meathill.com/mcp",
+  "serverInfo": {
+    "name": "muiad",
+    "version": "0.1.0",
+    "description": "Self-hosted, MCP-first developer ad network running on Cloudflare Workers."
+  },
+  "endpoints": [
+    {
+      "transport": "streamable-http",
+      "url": "https://api.muiad.meathill.com/mcp"
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://api.muiad.meathill.com/mcp"
+    }
+  ],
+  "mcpServers": {
+    "muiad": {
+      "name": "muiad",
+      "description": "MuiAD Streamable HTTP MCP endpoint. Authenticate with Authorization: Bearer muiad_… (per-user API key from admin).",
+      "url": "https://api.muiad.meathill.com/mcp"
+    }
+  }
+}

@@ -25,7 +25,7 @@ importers:
         version: link:../../packages/db
       '@opennextjs/cloudflare':
         specifier: ^1.20.6
-        version: 1.20.6(next@16.3.4(@opentelemetry/api@1.9.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(wrangler@4.127.1(@cloudflare/workers-types@5.20260831.1))
+        version: 1.20.6(next@16.3.4(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(wrangler@4.127.1(@cloudflare/workers-types@5.20260831.1))
       '@phosphor-icons/react':
         specifier: ^2.1.10
         version: 2.1.10(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -77,7 +77,7 @@ importers:
     dependencies:
       '@opennextjs/cloudflare':
         specifier: ^1.20.6
-        version: 1.20.6(next@16.3.4(@opentelemetry/api@1.9.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(wrangler@4.127.1(@cloudflare/workers-types@5.20260831.1))
+        version: 1.20.6(next@16.3.4(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(wrangler@4.127.1(@cloudflare/workers-types@5.20260831.1))
       '@phosphor-icons/react':
         specifier: ^2.1.10
         version: 2.1.10(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -103,6 +103,9 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4.2.2
         version: 4.2.2
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
       '@types/react':
         specifier: ^19.2.14
         version: 19.2.14
@@ -5818,7 +5821,7 @@ snapshots:
     dependencies:
       gzip-size: 6.0.0
 
-  '@opennextjs/aws@4.1.4(next@16.3.4(@opentelemetry/api@1.9.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))':
+  '@opennextjs/aws@4.1.4(next@16.3.4(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))':
     dependencies:
       '@ast-grep/napi': 0.40.5
       '@aws-sdk/client-cloudfront': 3.984.0
@@ -5842,11 +5845,11 @@ snapshots:
       - aws-crt
       - supports-color
 
-  '@opennextjs/cloudflare@1.20.6(next@16.3.4(@opentelemetry/api@1.9.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(wrangler@4.127.1(@cloudflare/workers-types@5.20260831.1))':
+  '@opennextjs/cloudflare@1.20.6(next@16.3.4(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(wrangler@4.127.1(@cloudflare/workers-types@5.20260831.1))':
     dependencies:
       '@ast-grep/napi': 0.40.5
       '@dotenvx/dotenvx': 1.31.0
-      '@opennextjs/aws': 4.1.4(next@16.3.4(@opentelemetry/api@1.9.1)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))
+      '@opennextjs/aws': 4.1.4(next@16.3.4(@opentelemetry/api@1.9.1)(@types/node@25.6.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5))
       ci-info: 4.4.0
       cloudflare: 4.5.0
       comment-json: 4.6.2
